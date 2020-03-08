@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="de">
+ <head>
+  <meta charset="utf-8"/>
+  <title>on the collaz problem</title>
+
+  <script src="collatz.js"></script>
+  <script type="text/javascript">
+
+    function StepTable(table) {
+
+        var tree = new Tree();
+
+        this.show = function(len, filter) {
+            while(table.rows.length)
+                table.deleteRow(-1);
+
+            len = Number(len);
+            if(filter)
+                filter = Number(filter);
+
+            for(var n=0; n<len; ++n) {
+
+                var node = tree.node(n);
+    
+                if(filter && filter>1 && filter!=node.len)
+                    continue;
+
+                var row = table.insertRow(-1);
+                row.align="right";
+
+                var cell=row.insertCell(-1)
+                cell.className= node.succ.n>node.n?"rd":"gr";
+                var span =  document.createElement("span");
+                cell.appendChild(span);
+                span.textContent=node.succ.n;
+                span.title=node.succ.n.toString(2);
+
+                cell=row.insertCell(-1)
+                cell.textContent=node.step;
+
+                var span =  document.createElement("span");
+                cell=row.insertCell(-1)
+                cell.appendChild(span);
+                span.textContent=node.n;
+                span.title=node.n.toString(2);
+                if((node.n%3)==0)
+                        cell.className="bl";
+
+                cell=row.insertCell(-1)
+                cell.textContent=node.len;
+
+                cell=row.insertCell(-1)
+                cell.textContent=node.max.n;
+
+                cell=row.insertCell(-1)
+                cell.style.textAlign="left";
+
+                appendPath = function(node, root) {
+                    if(node.succ!=node)
+                        appendPath(node.succ, root);
+
+                    var span =  document.createElement("span");
+                    span.textContent=" " + node.step;
+                    span.title=node.n;
+                    if(node.n == root.max.n)
+                        span.className = "rd";
+
+                    cell.appendChild(span);
+                }
+
+                appendPath(node, node);
+            }
+        }
+    }
+
+    window.onload = function () {
+        var table = document.getElementById("steps");
+        var steps = new StepTable(table);
+        var rows = document.getElementById("rows");
+        var filter = document.getElementById("filter");
+
+        function show() {
+            steps.show(rows.value, filter.value);
+        }
+
+        document.getElementById("show").onclick = show;
+
+        show();
+    };
+
+
+  </script>
+
+  <style type="text/css">
+    td {text-align: right; padding-left: 0.2em;}
+    .bl {color: blue; text-shadow:black 2px 2px 2px;}
+    .gr {color: green;}
+    .rd {color: red;}
+  </style>
+
+ </head>
+ <body>
+  <input id="show" type="button" value="show"/>
+  max:<input size="10" id="rows" type="text" value="500"/>
+  filter:<input size="4" id="filter" type="text" value=""/>
+  <br/>
+  <table border='1' rules='groups'>
+   <colgroup span="3" align="right"></colgroup>
+   <colgroup span="2" align="right"></colgroup>
+   <colgroup "right"></colgroup>
+   <thead>
+   <tr>
+     <th align="right">succ</th> 
+     <th align="right"><div>2<sup>k</sup></div></th> 
+     <th align="right">n</th> 
+     <th align="right">l</th> 
+     <th align="right">max</th> 
+     <th colspan='0'>path</th>
+    </tr>
+   </thead>
+   <tbody id="steps">
+   </tbody>
+  </table>
+ </td>
+</html>
