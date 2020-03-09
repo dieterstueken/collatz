@@ -19,46 +19,12 @@
         }
         table {
             border-collapse: collapse;
+            margin-left:auto;
+            margin-right:auto;
         }
     </style>
-    <script>
-      window.onload = function () {
-        var table = document.getElementById("table3");
-
-        function row(k) {
-          var row = table.insertRow();
-
-          function cell(value) {
-            var cell=row.insertCell()
-            //var span =  document.createElement("span");
-            //cell.appendChild(span);
-            cell.textContent=value;
-            return cell;
-          }
-
-          var kn = 3*k+2;
-          var l=0;
-
-          while(kn%2==0) {
-            kn /= 2;
-            ++l;
-          }
-
-          kn -= 1;
-          kn /= 2;
-
-          cell(2*k+1).style.textAlign = "right";
-          cell(k).style.textAlign = "right";
-          cell(kn).style.textAlign = "right";
-          cell(l).style.textAlign = "right";
-          cell("1.2.3").style.textAlign = "left";
-        }
-
-        for (var k = 0; k < 8; k++) {
-          row(k);
-        }
-      };
-    </script>
+    <script src="collatz.js"></script>
+    <script src="collatz-tables.js"></script>
     <title>Zusammenhänge</title>
 </head>
 <body>
@@ -117,10 +83,11 @@ Die verminderten Collatz Folgen enden also immer auf $0$
 und liefern zusätzlich eine Folge $L_i$ der jeweilgen Reduktionen.
 
 <table id="table3">
-<tr><th>n</th><th>k</th><th>$k^-$</th><th>L</th><th>$L_i$</th></tr>
+<tr><th>n</th><th>k</th><th>k<sup>+</sup></th><th style="text-align:left;">L<sub>i</sub></th></tr>
 </table>
+
 <p>
-Statt den Zerfall einer Zahl als Folge zu betrachten, kann man auch in die andere Richtung schauen,
+Statt nun den Zerfall einer Zahl als Folge zu betrachten, kann man auch in die andere Richtung schauen,
 also nach den Vorgängerelementen einer Zahl fragen.
 Man erhält hierfür den Zusammenhang:
 
