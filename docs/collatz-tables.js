@@ -16,7 +16,7 @@ function table3() {
     var kn = 3*k+2;
     var l=0;
 
-    while(kn%2==0) {
+    while(kn%2===0) {
       kn /= 2;
       ++l;
     }
@@ -37,7 +37,7 @@ function table3() {
     k = 3*k+2;
 
     var l=0;
-    while(k%2==0) {
+    while(k%2===0) {
         k /= 2;
         ++l
     }
@@ -51,6 +51,6 @@ function table3() {
   for (var k = 0; k < 8; k++) {
     row(k);
   }
-};
+}
 
 window.onload = table3;
