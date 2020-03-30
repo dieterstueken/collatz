@@ -36,9 +36,6 @@
                 span.textContent=node.succ.n;
                 span.title=node.succ.n.toString(2);
 
-                cell=row.insertCell(-1)
-                cell.textContent=node.step;
-
                 var span =  document.createElement("span");
                 cell=row.insertCell(-1)
                 cell.appendChild(span);
@@ -48,7 +45,13 @@
                         cell.className="bl";
 
                 cell=row.insertCell(-1)
+                cell.textContent=node.index;
+
+                cell=row.insertCell(-1)
                 cell.textContent=node.len;
+
+                cell=row.insertCell(-1)
+                cell.textContent=node.fac();
 
                 cell=row.insertCell(-1)
                 cell.textContent=node.max.n;
@@ -56,20 +59,25 @@
                 cell=row.insertCell(-1)
                 cell.style.textAlign="left";
 
-                appendPath = function(node, root) {
-                    if(node.succ!=node)
-                        appendPath(node.succ, root);
+                let max = node.max.n;
+                appendPath = function(node) {
 
+                    // append successors first
+                    let succ = node.succ;
+                    if(succ!=node && succ.index>0)
+                        appendPath(succ);
+
+                    // append current successor
                     var span =  document.createElement("span");
                     span.textContent=" " + node.step;
-                    span.title=node.n;
-                    if(node.n == root.max.n)
+                    span.title=succ.n + "<-" + node.n;
+                    if(node.n == max)
                         span.className = "rd";
 
                     cell.appendChild(span);
                 }
 
-                appendPath(node, node);
+                appendPath(node);
             }
         }
     }
@@ -108,19 +116,20 @@
   <table border='1' rules='groups'>
    <colgroup span="3" align="right"></colgroup>
    <colgroup span="2" align="right"></colgroup>
-   <colgroup "right"></colgroup>
+   <colgroup align="right"></colgroup>
    <thead>
    <tr>
      <th align="right">succ</th> 
-     <th align="right"><div>2<sup>k</sup></div></th> 
-     <th align="right">n</th> 
-     <th align="right">l</th> 
-     <th align="right">max</th> 
+     <th align="right">n</th>
+     <th align="right">k</th>
+    <th align="right">l</th>
+    <th align="right">p</th>
+     <th align="right">max</th>
      <th colspan='0'>path</th>
     </tr>
    </thead>
    <tbody id="steps">
    </tbody>
   </table>
- </td>
+ </body>
 </html>

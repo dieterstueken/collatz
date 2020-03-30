@@ -35,7 +35,7 @@ function Tree() {
             // root node(0)
             this.succ = this;
             this._pred = this;
-            this.len = 1;
+            this.len = 0;
             this.index = 0;
             this.path = "1";
             this.sum = 1;
