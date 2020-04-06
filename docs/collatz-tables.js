@@ -63,7 +63,7 @@ function table2(k) {
           let c=row.insertCell();
           c.style.textAlign = "right";
 
-          if(value != undefined)
+          if(value !== undefined)
               c.textContent=value;
           return c;
       }
@@ -78,17 +78,34 @@ function table2(k) {
       cell(n);
       cell(k);
       cell(m);
-      cell(k.toString(2));
 
-      let del = document.createElement("del")
+      cell().append(k.toString(2));
+
+      let bits = document.createElement("span");
+      bits.style.color ="blue";
+      if(next>0) {
+          bits.append(next.toString(2));
+      }
+
+      let del = document.createElement("del");
       del.append("1");
 
-      for(let i=0; i<l; ++i)
-        del.append("0");
+      let tail = document.createElement("span");
+      tail.style.color = "red";
 
-      cell().append(next>0?next.toString(2):"", del);
+      for(let i=0; i<l; ++i)
+          tail.append("0");
+
+      del.append(tail);
+
+      cell().append(bits, del);
 
       cell(l);
+
+      let kn = document.createElement("span");
+      kn.style.color ="blue";
+      kn.append(next);
+      cell().append(kn);
 
       return next;
   }
@@ -239,7 +256,7 @@ function table4(N) {
 window.onload = function() {
 table1(9);
 table2(4);
-table3(10);
+table3(12);
 table4(40);
 }
 
