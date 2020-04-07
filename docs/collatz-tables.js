@@ -10,14 +10,14 @@ function L(n) {
 
 function table1(n) {
 
-  let table = document.getElementById("table1");
+  const table = document.getElementById("table1");
 
   function row(n) {
 
-      let row = table.insertRow();
+      const row = table.insertRow();
 
       function cell(value) {
-          let c=row.insertCell();
+          const c=row.insertCell();
           c.style.textAlign = "right";
 
           if(value != undefined)
@@ -25,21 +25,27 @@ function table1(n) {
           return c;
       }
 
-      let m=3*n+1;
-      let l = L(m);
-      let next = m>>l;
+      const m=3*n+1;
+      const l = L(m);
+      const next = m>>l;
 
       cell(n);
       cell(m);
       cell(n.toString(2));
       
-      let del = document.createElement("del")
-      for(let i=0; i<l; ++i)
-        del.append("0");
+      const del = document.createElement("del");
+      const tmp = document.createElement("span");
+      tmp.style.color = "red";
+
+      for(let i=0; i<l-1; ++i)
+        tmp.append("0");
+
+      del.append(tmp);
+      del.append("0");
 
       cell().append(next.toString(2), del);
 
-      cell(l-1);
+      cell(l-1).style.color = "red";
 
       return next;
   }
@@ -100,12 +106,9 @@ function table2(k) {
 
       cell().append(bits, del);
 
-      cell(l);
+      cell(l).style.color = "red";
 
-      let kn = document.createElement("span");
-      kn.style.color ="blue";
-      kn.append(next);
-      cell().append(kn);
+      cell(next).style.color ="blue";
 
       return next;
   }
