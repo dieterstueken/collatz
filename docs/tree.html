@@ -23,13 +23,13 @@
 
                 var node = tree.node(n);
     
-                if(filter && filter>1 && filter!=node.len)
+                if(filter && filter>0 && filter!=node.len)
                     continue;
 
-                var row = table.insertRow(-1);
+                var row = table.insertRow();
                 row.align="right";
 
-                var cell=row.insertCell(-1)
+                var cell=row.insertCell()
                 cell.className= node.succ.n>node.n?"rd":"gr";
                 var span =  document.createElement("span");
                 cell.appendChild(span);
@@ -37,26 +37,29 @@
                 span.title=node.succ.n.toString(2);
 
                 var span =  document.createElement("span");
-                cell=row.insertCell(-1)
+                cell=row.insertCell()
                 cell.appendChild(span);
                 span.textContent=node.n;
                 span.title=node.n.toString(2);
                 if((node.n%3)==0)
                         cell.className="bl";
 
-                cell=row.insertCell(-1)
-                cell.textContent=node.index;
+                cell=row.insertCell()
+                var span =  document.createElement("span");
+                span.textContent=node.index;
+                span.title=node.index.toString(2);
+                cell.appendChild(span);
 
-                cell=row.insertCell(-1)
+                cell=row.insertCell()
                 cell.textContent=node.len;
 
-                cell=row.insertCell(-1)
+                cell=row.insertCell()
                 cell.textContent=node.fac();
 
-                cell=row.insertCell(-1)
+                cell=row.insertCell()
                 cell.textContent=node.max.n;
 
-                cell=row.insertCell(-1)
+                cell=row.insertCell()
                 cell.style.textAlign="left";
 
                 let max = node.max.n;

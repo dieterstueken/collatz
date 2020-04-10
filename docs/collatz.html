@@ -75,6 +75,32 @@ und liefern zusätzlich eine Folge $L_i$ der jeweilgen Reduktionen.
 </table>
 
 <p>
+    $$ 3k^+ = 2^L(2k+1)-2$$
+    $$ 4^l = 3g_l+1$$
+
+    für $k=3j+0$ und $L=2l+1$ gilt:
+
+    $$ \begin{align}
+    3k^+ &amp;= 2 \cdot 4^l (6j+1)-2 \\
+             &amp;= 2(3g_l+1)(6j+1)-2 \\
+             &amp;= 36 g_l j + 6 g_l + 12 j \\
+             &amp;= 3(12g_l j + 2 g_l + 4 j) \\
+             \text{somit:}\\
+         k^+ &amp;= 2g_l(6j+1) + 4 j
+         \end{align} $$
+
+    für $k=3j+2$ und $L=2l$ gilt:
+
+    $$ \begin{align}
+    3k^+ &amp;= 4^l (6j+4+1)-2 \\
+             &amp;= (3g_l+1)(6j+5)-1 \\
+             &amp;= 18 j g_l + 15 g_l + 6j  + 3\\
+             \text{somit:}\\
+         k^+ &amp;= g_l(3j+5) + 2j +1
+         \end{align} $$
+
+
+
 Durch die Formatierung der Folge $L$ wird klar, dass diese einem bestimmten Schema folgen.<br>
 Hierzu dreht man die Folge einfach um, zum Beispiel:
 2:[3], 1:[3 0], 6:[3 2], 8:[3 2 1] oder 9:[3 2 1 0 2 0].
@@ -86,7 +112,6 @@ gar nicht erweitern lassen.
 
 Die Umkehrung der Formel lautet entsprechend:
 
-    $$ 3k^+ = 2^L(2k+1)-2$$
 
     Die Rechte Seite muss also durch drei teilbar sein um die Folge erweitern zu können.
 
