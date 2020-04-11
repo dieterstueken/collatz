@@ -258,7 +258,7 @@ function table4(N) {
 
 window.onload = function() {
 table1(9);
-table2(4);
+table2(13);
 table3(12);
 table4(40);
 }
