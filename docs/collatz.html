@@ -31,17 +31,18 @@
 
 Die gängige Beschreibung der Collatz Sequenz lautet:
 
-$$ n^- =\begin{cases}
+$$ C(n) =\begin{cases}
     {n/2} & {\text{wenn }}n\equiv 0{\pmod {2}}\\
     3n+1 & {\text{wenn }}n\equiv 1{\pmod {2}}.
 \end{cases}$$
 
-wenn man aufeinanderfolgenden Divisionen durch Zwei zu einem Schritt zusammenzieht,
+Die Folge für $n$ ergibt sich durch Iteration dieser Vorschrift bis $n=1$ mit $C(1) = 1$.
+<p>
+Zieht man $L$ aufeinanderfolgenden Divisionen durch Zwei zu einem Schritt zusammenz,
 so lässt sich die Definition vereinfachen.
-Hierbei reicht es nur die ungeraden $n$ zu betrachten.<br/>
-Da $3n+1$ dann immer gerade ist, lässt sich schreiben:
+Hierzu reicht es nur die ungeraden $n$ zu betrachten. Da $3n+1$ dann immer gerade ist, lässt sich schreiben:
 
-$$ n^- = \frac{(3n+1)}{2} / 2^L \quad \text{ mit } n\equiv 1{\pmod {2}}$$
+$$ C(n, L) = \frac{(3n+1)}{2} / 2^L \quad \text{ mit } n\equiv 1{\pmod {2}}$$
 
 Als Binärzahl betrachtet bedeutet dies, dass man einfach alle ($L+1$) Nullen am Ende tilgt.<br/>
 Als Beispiel die Collatz Folge für den Startwert $n=9$:
@@ -52,31 +53,58 @@ Als Beispiel die Collatz Folge für den Startwert $n=9$:
 </table>
 
 <p>
-Da nun $n$ immer ungerade ist, kann man mit $n = 2k+1$ substituieren und erhält damit:
+Somit erhält man für die Folge von $n$ zusätzlich eine Folge für $L$. Für den Startwert $n=9$ lautet sie:
+$$L: [1,0,0,1,2,3,1]$$
 
-$$ k^- = ((3k+2) / 2^L - 1)/2$$
+Da nun $n$ immer ungerade ist, kann man mit $n = 2k+1$ substituieren und erhält damit eine etwas andere Folge:
 
-Binär betrachtet bedeutet die zunächst etwas komliziert aussehende Operation $(N/2^L-1)/2$,
-    dass man hinten $L$ Nullen streicht und zusätzlich noch eine führende 1.
+$$ k^- = K^-(k, L) = ((3k+2) / 2^L - 1)/2$$
 
+Diese verminderten Collatz Folgen enden also statt auf $n=1$ jeweils auf $k=0$.
+<p>
+Binär betrachtet bedeutet die zunächst etwas komliziert aussehende Operation
+$N \gets (N/2^L-1)/2$,
+dass man die hinteren $L$ Nullen streicht und zusätzlich noch eine führende 1.
+<p>
 Als Beispiel wieder die Collatz Folge mit den Startwerten $n=9$ bzw. $k=4$:
 
 <p>
 <table id="table2">
-    <tr> <th>$n$</th><th>&nbsp;$k$</th><th>$3k+2$</th><th colspan="2" style="text-align:center;">binär</th><th>&nbsp$L$</th><th>$k^-$</th> </tr>
+    <tr> <th>$n$</th><th>&nbsp;$k$</th><th>$3k+2$</th>
+         <th colspan="2" style="text-align:center;">binär</th><th>&nbsp;$L$</th><th>$K^-$</th> </tr>
 </table>
 
 <p>
-Die verminderten Collatz Folgen enden also immer auf $0$
-und liefern zusätzlich eine Folge $L_i$ der jeweilgen Reduktionen.
+
+Betrachtet man die Folge der $L$ für verschiedene Startwerte von $k$ erhält man folgendes Bild:
 
 <table id="table3">
 <tr><th>$k$</th><th>$k^-$</th><th style="text-align:right;">$L_i$</sub></th></tr>
 </table>
 
 <p>
-    $$ 3k^+ = 2^L(2k+1)-2$$
+Der Zerfall einer Zahl $k$ erfolgt offensichtlich nach einem erkennbaren Schema hin zum Endwert $n=0$.
+Um dieses genauer zu ergründen untersuchen wir daher stattdessen den <b>Aufbau</b> der Folgen.
+Das heisst wir betrachten die Umkehrfunktion von $K^-$ mit:
+$$K^+(k,L) = k^+ = (2^L(2k+1)-2)/3$$
+und drehen die Folgen $L_i$ um.
+Im Folgenden wird wichtig sein, ob $L$
+<span style="color:red">gerade</span> oder
+<span style="color:green">ungrade</span> ist.
+
+<table id="table4">
+<tr><th>$k^+$</th><th>&nbsp;$k$&nbsp;</th><th style="text-align:left;">$L_i$</sub></th></tr>
+</table>
+<p>
+Damit ein ganzzahliger Wert für $k^+$ existiert muss offensichtlich $2^L(2k+1)-2$ durch drei teilbar sein.
+Durch Analyse der Tabelle stellt sich heraus, dass dies erfüllt wird
+für <span style="color:green">ungerade $L$ wenn $k \equiv 0 \pmod{3}$</span> und
+für <span style="color:red">gerade $L$ wenn $k \equiv 2 \pmod{3}$</span>, während
+für $k \equiv 1 \pmod{3}$ kein ganzzahlieger Wert für $k^+$ existiert.
+<p>
+Um dies zu zeigen verwendet man den Zusammenhang:
     $$ 4^l = 3g_l+1$$
+<p>
 
     für $k=3j+0$ und $L=2l+1$ gilt:
 
@@ -96,24 +124,10 @@ und liefern zusätzlich eine Folge $L_i$ der jeweilgen Reduktionen.
              &amp;= (3g_l+1)(6j+5)-1 \\
              &amp;= 18 j g_l + 15 g_l + 6j  + 3\\
              \text{somit:}\\
-         k^+ &amp;= g_l(3j+5) + 2j +1
+         k^+ &amp;= g_l(6j+5) + 2j +1
          \end{align} $$
 
 
-
-Durch die Formatierung der Folge $L$ wird klar, dass diese einem bestimmten Schema folgen.<br>
-Hierzu dreht man die Folge einfach um, zum Beispiel:
-2:[3], 1:[3 0], 6:[3 2], 8:[3 2 1] oder 9:[3 2 1 0 2 0].
-</p>
-
-Betrachtet man die Folgen genauer, so findet man, dass sich Folgen mit $k\equiv 0{\pmod {1}}$
-um gerade $L$ erweitern lassen, mit $k\equiv 0{\pmod {2}}$ um ungerade $L$ und Folgen von $k\equiv 0{\pmod {1}}$
-gar nicht erweitern lassen.    
-
-Die Umkehrung der Formel lautet entsprechend:
-
-
-    Die Rechte Seite muss also durch drei teilbar sein um die Folge erweitern zu können.
 
 
 </body>

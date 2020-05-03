@@ -8,6 +8,10 @@ function L(n) {
     return L;
 }
 
+function G(l) {
+    return (4<<l)/3;
+}
+
 function table1(n) {
 
   const table = document.getElementById("table1");
@@ -37,11 +41,11 @@ function table1(n) {
       const tmp = document.createElement("span");
       tmp.style.color = "red";
 
+      del.append("0");
       for(let i=0; i<l-1; ++i)
         tmp.append("0");
 
       del.append(tmp);
-      del.append("0");
 
       cell().append(next.toString(2), del);
 
@@ -129,8 +133,6 @@ function table3(N) {
 
     function cell(value) {
       let c=row.insertCell();
-      c.style.textAlign = "right";
-
       if(value != undefined)
           c.textContent=value;
       return c;
@@ -140,97 +142,18 @@ function table3(N) {
     let l=L(kn);
     kn >>= l+1;
 
-    let c = cell(k);
-
-    c = cell(kn);
+    cell(k);
+    cell(kn);
     seq(cell(), k);
   }
 
   function seq(cell, k) {
 
-    function span(l, k) {
-        let span =  document.createElement("span");
-        span.textContent = l.toString();
-        span.title = k.toString();
-        cell.append(span);
-    }
-
-    if(k<1) {
-        span(1,0);
-    } else {
-
-        k = 3*k+2;
-        let l=L(k);
-        k >>= l+1;
-
-        span(l,k);
-        if(k>0) {
-          cell.append(' ');
-          seq(cell, k);
-        }
-    }
-  }
-
-  for (let k = 0; k < N; k++) {
-    row(k);
-  }
-}
-
-
-function table4(N) {
-
-  let table = document.getElementById("table4");
-
-  function row(k) {
-    let row = table.insertRow();
-
-      function cell(value) {
-          let c=row.insertCell();
-          c.style.textAlign = "right";
-
-          if(value != undefined)
-              c.textContent=value;
-          return c;
-      }
-
-    let kn = 3*k+2;
-    let l=L(kn);
-    kn >>= l+1;
-
-    let c = cell(k);
-
-    switch(k%3) {
-      case 0:
-        c.style.color = "blue";
-        break;
-      case 2:
-         c.style.color = "green";
-         break;
-    }
-
-    c = cell(kn);
-    if(kn>k)
-      c.style.color = "red";   
-
-    c = cell();
-    c.style.textAlign = "left";
-    seq(c, k);
-  }
-
-  function seq(cell, k) {
-
     function span(l, k, kn) {
-        let span =  document.createElement("span");
+        cell.append('\u00a0');
+        const span =  document.createElement("span");
         span.textContent = l.toString();
-        span.title = k.toString();
-        switch(k%3) {
-            case 0:
-                span.style.color = "blue";
-                break;
-            case 2:
-                 span.style.color = "green";
-                 break;
-        }
+        span.title = k.toString() + '\u2192' + kn.toString();
         cell.append(span);
     }
 
@@ -242,12 +165,10 @@ function table4(N) {
         let l=L(kn);
         kn >>= l+1;
 
+        span(l,k,kn);
         if(kn>0) {
           seq(cell, kn);
-          cell.append(' ');
         }
-
-        span(l,k, kn);
     }
   }
 
@@ -256,10 +177,91 @@ function table4(N) {
   }
 }
 
+function table4(N) {
+
+  let table = document.getElementById("table4");
+
+  function row(k) {
+    let row = table.insertRow();
+
+    function cell(value) {
+      let c=row.insertCell();
+
+      if(value != undefined)
+          c.textContent=value;
+      return c;
+    }
+
+    function seq(k) {
+      let c = cell();
+      c.style.textAlign = "left";
+
+      function sq(k) {
+
+        function span(l, k) {
+            c.append('\u00a0');
+            const span =  document.createElement("span");
+            span.textContent = l.toString();
+            span.title = k.toString() + '\u2192' + kn.toString();
+            c.append(span);
+            return span;
+        }
+
+        if(k<1) {
+            return span(1,0,0);
+        } else {
+
+            let kn = 3*k+2;
+            let l=L(kn);
+            kn >>= l+1;
+
+            if(kn>0) {
+              sq(kn);
+            }
+
+            return span(l,kn,k);
+        }
+      }
+
+      return sq(k);
+    }
+
+    let kn = 3*k+2;
+    let l=L(kn);
+    kn >>= l+1;
+    const color = l%2==0 ? "red" : "green";
+
+    cell(k);
+    cell(kn).style.color = color;
+    seq(k).style.color = color;
+  }
+
+  for (let k = 0; k < N; k++) {
+    row(k);
+  }
+}
+
+function table5(N) {
+
+  let table = document.getElementById("table5");
+
+  function row(k) {
+    let row = table.insertRow();
+
+    function cell(value) {
+      let c=row.insertCell();
+
+      if(value != undefined)
+          c.textContent=value;
+      return c;
+    }
+  }
+}
+
 window.onload = function() {
 table1(9);
-table2(13);
+table2(4);
 table3(12);
-table4(40);
+table4(12);
 }
 
