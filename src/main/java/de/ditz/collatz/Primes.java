@@ -4,7 +4,8 @@ import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
-import java.util.function.LongBinaryOperator;
+import java.util.concurrent.RecursiveTask;
+import java.util.function.BooleanSupplier;
 import java.util.function.LongConsumer;
 
 /**
@@ -17,7 +18,7 @@ import java.util.function.LongConsumer;
 public class Primes {
 
     static final int BLOCK = Short.MAX_VALUE;
-    static final int SIEVE = 4096;
+    static final int SIEVE = 64*Short.MAX_VALUE;
 
     final List<Block> blocks = new ArrayList<>();
     long size = 0;
@@ -63,21 +64,30 @@ public class Primes {
         ++size;
     }
 
-    private int grow() {
-        return new Sieve().run();
-    }
+    private long compute(BooleanSupplier stop) {
 
-    public void forEach(LongBinaryOperator sieve) {
+        int n=0;
+        int count = 0;
 
-        for (long i = 0; i < size; i++) {
-            long p = get(i);
-            sieve.applyAsLong(i, p);
+        if(stop.getAsBoolean())
+            return count;
+
+        Sieve sieve = new Sieve((last()+1) | 1L, stop);
+        sieve.fork();
+
+        while(sieve!=null) {
+            Sieve next = sieve.join();
+            count += sieve.finish();
+            sieve = next;
+            ++n;
         }
+
+        return count;
     }
 
-    public void forEach(LongConsumer sieve) {
+    public void forEach(Long start, LongConsumer sieve) {
 
-        for (long i = 0; i < size; i++) {
+        for (long i = start; i < size; i++) {
             long p = get(i);
             sieve.accept(p);
         }
@@ -121,23 +131,65 @@ public class Primes {
 
             p[(int)offset] = (int)value;
         }
+
+        public double density() {
+            return (p[BLOCK-1] - p[0]) * 1.0 / BLOCK;
+        }
     }
 
-    class Sieve {
-        final long base;
+    class Sieve extends RecursiveTask<Sieve> {
 
         final BitSet sieve = new BitSet(SIEVE);
 
-        Sieve() {
-            base = (last()+1) | 1L;
+        final long base;
+
+        long processed = 0;
+
+        final BooleanSupplier stop;
+
+        Sieve(long base, BooleanSupplier stop) {
+            this.base = base; //(last()+1) | 1L;
+            this.stop = stop;
         }
 
-        public int run() {
-            // process known primes
-            Primes.this.forEach(this::sieve);
+        void fill() {
+
+            long limit = size;
+            for (long i = processed; i < limit; i++) {
+                long p = Primes.this.get(i);
+                sieve(p);
+            }
+        }
+
+        private Sieve next() {
+            if(stop.getAsBoolean())
+                return null;
+
+            Sieve next = new Sieve(base + SIEVE, stop);
+            next.fork();
+            return next;
+        }
+
+        @Override
+        protected Sieve compute() {
+            Sieve next = next();
+
+            fill();
+
+            return next;
+        }
+
+        /**
+         * Finisch sieving.
+         * @return number of primes added.
+         */
+        int finish() {
+
+            // fill any remaining.
+            fill();
 
             // process new primes
-            int count = 0;
+            int count=0;
             for(int i=sieve.nextClearBit(0); i>=0 && i<SIEVE; i = sieve.nextClearBit(i+1)) {
                 long prime = base + 2*i;
                 add(prime);
@@ -147,6 +199,7 @@ public class Primes {
 
             // mark already done
             last = base + 2*SIEVE - 2;
+
             return count;
         }
 
@@ -156,18 +209,21 @@ public class Primes {
             return (p2*k + prime - base)/2;
         }
 
-        void sieve(long prime) {
-            // odd numbers only
-            if(prime<=2)
-                return;
+        private void sieve(long prime) {
 
-            for(long index = i0(prime); index<SIEVE; index += prime) {
-                sieve.set((int) index);
+            // odd numbers only
+            if(prime>2) {
+                for (long index = i0(prime); index < SIEVE; index += prime) {
+                    sieve.set((int) index);
+                }
             }
+
+            ++processed;
         }
     }
 
     public static void main(String ... args) {
+
         Primes primes = new Primes() {
 
             long previous = 0;
@@ -187,20 +243,7 @@ public class Primes {
             }
         };
 
-        //long last = 0;
-
-        for(int i=0; i<Short.MAX_VALUE; ++i) {
-            long count = primes.grow();
-
-            //long time = System.currentTimeMillis();
-            //if(time>last+1000) {
-            //    System.out.format("%,13d %,5d\n", primes.size(), count);
-            //    last = time;
-            //}
-
-            if(primes.last()>Integer.MAX_VALUE/32)
-                break;
-        }
+        primes.compute(() -> primes.last()>Integer.MAX_VALUE);
 
         System.out.format("%,13d %,13d\n", primes.size(), primes.last());
     }
