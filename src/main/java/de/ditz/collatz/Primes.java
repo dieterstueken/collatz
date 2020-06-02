@@ -56,7 +56,7 @@ public class Primes {
         throw new IndexOutOfBoundsException("overflow");
     }
 
-    private void add(long prime) {
+    protected void add(long prime) {
         Block block = block(size);
         block.setPrime(size, prime);
         last = prime;
@@ -168,21 +168,40 @@ public class Primes {
     }
 
     public static void main(String ... args) {
-        Primes primes = new Primes();
+        Primes primes = new Primes() {
 
-        long last = 0;
+            long previous = 0;
+            long gap = 0;
+
+            @Override
+            protected void add(long prime) {
+                super.add(prime);
+                long g = prime-previous;
+
+                if(g>gap) {
+                    System.out.format("gap %,13d %,5d %,13d\n", size, g, prime);
+                    gap = g;
+                }
+
+                previous = prime;
+            }
+        };
+
+        //long last = 0;
 
         for(int i=0; i<Short.MAX_VALUE; ++i) {
             long count = primes.grow();
 
-            long time = System.currentTimeMillis();
-            if(time>last+1000) {
-                System.out.format("%,13d %,5d\n", primes.size(), count);
-                last = time;
-            }
+            //long time = System.currentTimeMillis();
+            //if(time>last+1000) {
+            //    System.out.format("%,13d %,5d\n", primes.size(), count);
+            //    last = time;
+            //}
 
-            if(primes.size()>Integer.MAX_VALUE/32)
+            if(primes.last()>Integer.MAX_VALUE/32)
                 break;
         }
+
+        System.out.format("%,13d %,13d\n", primes.size(), primes.last());
     }
 }
