@@ -103,10 +103,14 @@ function Tree() {
         }
 
         this.succeeds = function(node) {
+            
             if(node==undefined)
                 return false;
 
             if(node==this)
+                return true;
+
+            if(node==this.index)
                 return true;
 
             if(this.succ==this)

@@ -3,10 +3,10 @@ package de.ditz.collatz;
 import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.BitSet;
-import java.util.List;
 import java.util.concurrent.RecursiveTask;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BooleanSupplier;
-import java.util.function.LongConsumer;
 
 /**
  * version:     $
@@ -20,15 +20,22 @@ public class Primes {
     static final int BLOCK = Short.MAX_VALUE;
     static final int SIEVE = 64*Short.MAX_VALUE;
 
-    final List<Block> blocks = new ArrayList<>();
+    final ArrayList<Block> blocks = new ArrayList<>();
     long size = 0;
     long last = 1;
 
     public Primes() {
         add(2L);
+        add(3L);
+        add(5L);
+        add(7L);
+        add(11L);
+        add(13L);
+        add(17L);
+        add(19L);
     }
 
-    private long size() {
+    private synchronized long size() {
         return size;
     }
 
@@ -85,14 +92,6 @@ public class Primes {
         return count;
     }
 
-    public void forEach(Long start, LongConsumer sieve) {
-
-        for (long i = start; i < size; i++) {
-            long p = get(i);
-            sieve.accept(p);
-        }
-    }
-
     class Block extends AbstractList<Long> {
 
         final int index;
@@ -137,6 +136,10 @@ public class Primes {
         }
     }
 
+    final AtomicInteger ready = new AtomicInteger();
+
+    final AtomicReference<Sieve> pending = new AtomicReference<>();
+
     class Sieve extends RecursiveTask<Sieve> {
 
         final BitSet sieve = new BitSet(SIEVE);
@@ -153,12 +156,17 @@ public class Primes {
         }
 
         void fill() {
-
-            long limit = size;
-            for (long i = processed; i < limit; i++) {
-                long p = Primes.this.get(i);
-                sieve(p);
+            int turn = 0;
+            for(long limit = size(); processed<limit; limit = size()) {
+                for (long i = processed; i < limit; i++) {
+                    long p = Primes.this.get(i);
+                    sieve(p);
+                }
+                ++turn;
             }
+
+            if(turn>0)
+                turn += 0;
         }
 
         private Sieve next() {
@@ -166,7 +174,15 @@ public class Primes {
                 return null;
 
             Sieve next = new Sieve(base + SIEVE, stop);
-            next.fork();
+
+            int n = ready.get();
+            if(n<128)
+                next.fork();
+            else {
+                if (pending.getAndSet(next) != null)
+                    throw new IllegalStateException("multiple pendings");
+            }
+            
             return next;
         }
 
@@ -175,6 +191,8 @@ public class Primes {
             Sieve next = next();
 
             fill();
+
+            ready.incrementAndGet();
 
             return next;
         }
@@ -199,6 +217,13 @@ public class Primes {
 
             // mark already done
             last = base + 2*SIEVE - 2;
+
+            int n = ready.decrementAndGet();
+            if(n<32) {
+                Sieve next = pending.getAndSet(null);
+                if (next != null)
+                    next.fork();
+            }
 
             return count;
         }
@@ -243,7 +268,12 @@ public class Primes {
             }
         };
 
-        primes.compute(() -> primes.last()>Integer.MAX_VALUE);
+        primes.compute(() -> primes.last()>4L*Integer.MAX_VALUE);
+        //primes.compute(() -> primes.blocks.size()>80);
+
+        int size = primes.blocks.size();
+        Block block = primes.blocks.get(size -2);
+        System.out.format("blocks: %d, range: %d, density: %.1f\n", size, block.get(block.size()-1) - block.get(0), block.density());
 
         System.out.format("%,13d %,13d\n", primes.size(), primes.last());
     }

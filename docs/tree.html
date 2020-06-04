@@ -7,36 +7,34 @@
   <script src="collatz.js"></script>
   <script type="text/javascript">
 
+    const tree = new Tree();
+
     function StepTable(table) {
 
-        var tree = new Tree();
-
-        this.show = function(len, filter) {
+        this.show = function(len, accept) {
             while(table.rows.length)
                 table.deleteRow(-1);
 
             len = Number(len);
-            if(filter)
-                filter = Number(filter);
 
             for(var n=0; n<len; ++n) {
 
-                var node = tree.node(n);
+                const node = tree.node(n);
     
-                if(filter && filter>0 && filter!=node.len)
+                if(!accept(node))
                     continue;
 
-                var row = table.insertRow();
+                const row = table.insertRow();
                 row.align="right";
 
-                var cell=row.insertCell()
+                let cell=row.insertCell()
                 cell.className= node.succ.n>node.n?"rd":"gr";
-                var span =  document.createElement("span");
+                let span =  document.createElement("span");
                 cell.appendChild(span);
                 span.textContent=node.succ.n;
                 span.title=node.succ.n.toString(2);
 
-                var span =  document.createElement("span");
+                span =  document.createElement("span");
                 cell=row.insertCell()
                 cell.appendChild(span);
                 span.textContent=node.n;
@@ -45,7 +43,7 @@
                         cell.className="bl";
 
                 cell=row.insertCell()
-                var span =  document.createElement("span");
+                span =  document.createElement("span");
                 span.textContent=node.index;
                 span.title=node.index.toString(2);
                 cell.appendChild(span);
@@ -54,10 +52,13 @@
                 cell.textContent=node.len;
 
                 cell=row.insertCell()
+                cell.textContent=2*node.sum - node.len;
+
+                cell=row.insertCell()
                 cell.textContent=node.fac();
 
                 cell=row.insertCell()
-                cell.textContent=node.max.n;
+                cell.textContent=node.max.index;
 
                 cell=row.insertCell()
                 cell.style.textAlign="left";
@@ -71,7 +72,7 @@
                         appendPath(succ);
 
                     // append current successor
-                    var span =  document.createElement("span");
+                    let span =  document.createElement("span");
                     span.textContent=" " + node.step;
                     span.title=succ.n + "<-" + node.n;
                     if(node.n == max)
@@ -86,13 +87,32 @@
     }
 
     window.onload = function () {
-        var table = document.getElementById("steps");
-        var steps = new StepTable(table);
-        var rows = document.getElementById("rows");
-        var filter = document.getElementById("filter");
+        const table = document.getElementById("steps");
+        const steps = new StepTable(table);
+        const rows = document.getElementById("rows");
+
+        const len = document.getElementById("len");
+        const cont = document.getElementById("cont");
+
+        function accept(node) {
+
+            if(len.value) {
+                const value = Number(len.value);
+                if(node.len!=value)
+                    return false;
+            }
+
+            if(cont.value) {
+                const value = Number(cont.value);
+                if(!node.succeeds(value))
+                    return false;
+            }
+
+            return true;
+        }
 
         function show() {
-            steps.show(rows.value, filter.value);
+            steps.show(rows.value, accept);
         }
 
         document.getElementById("show").onclick = show;
@@ -114,11 +134,12 @@
  <body>
   <input id="show" type="button" value="show"/>
   max:<input size="10" id="rows" type="text" value="500"/>
-  filter:<input size="4" id="filter" type="text" value=""/>
+  len:<input size="4" id="len" type="text" value=""/>
+  contains:<input size="4" id="cont" type="text" value=""/>
   <br/>
   <table border='1' rules='groups'>
    <colgroup span="3" align="right"></colgroup>
-   <colgroup span="2" align="right"></colgroup>
+   <colgroup span="3" align="right"></colgroup>
    <colgroup align="right"></colgroup>
    <thead>
    <tr>
@@ -126,6 +147,7 @@
      <th align="right">n</th>
      <th align="right">k</th>
     <th align="right">l</th>
+    <th align="right">s</th>
     <th align="right">p</th>
      <th align="right">max</th>
      <th colspan='0'>path</th>
