@@ -1,4 +1,4 @@
-package de.ditz.collatz;
+package de.ditz.primes;
 
 import java.util.AbstractList;
 import java.util.ArrayList;
