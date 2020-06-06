@@ -156,17 +156,14 @@ public class Primes {
         }
 
         void fill() {
-            int turn = 0;
+
             for(long limit = size(); processed<limit; limit = size()) {
                 for (long i = processed; i < limit; i++) {
                     long p = Primes.this.get(i);
-                    sieve(p);
+                    if(!sieve(p))
+                        return;
                 }
-                ++turn;
             }
-
-            if(turn>0)
-                turn += 0;
         }
 
         private Sieve next() {
@@ -234,7 +231,11 @@ public class Primes {
             return (p2*k + prime - base)/2;
         }
 
-        private void sieve(long prime) {
+        private boolean sieve(long prime) {
+
+            // terminate
+            if(prime>(base+SIEVE)/prime)
+                return false;
 
             // odd numbers only
             if(prime>2) {
@@ -244,6 +245,8 @@ public class Primes {
             }
 
             ++processed;
+
+            return true;
         }
     }
 

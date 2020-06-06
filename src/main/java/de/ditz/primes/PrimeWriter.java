@@ -6,6 +6,8 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.EnumSet;
+import java.util.Set;
 
 /**
  * Created by IntelliJ IDEA.
@@ -18,9 +20,18 @@ public class PrimeWriter extends PrimeList implements AutoCloseable {
     PrimeBuffer tail = null;
 
     public static PrimeWriter open(Path path) throws IOException {
+        return open(path, false);
+    }
 
-        FileChannel channel = FileChannel.open(path, StandardOpenOption.CREATE,
-                StandardOpenOption.READ, StandardOpenOption.WRITE);
+    public static PrimeWriter open(Path path, boolean truncate) throws IOException {
+
+        Set<StandardOpenOption> options = EnumSet.of(StandardOpenOption.CREATE,
+                        StandardOpenOption.READ, StandardOpenOption.WRITE);
+
+        if(truncate)
+            options.add(StandardOpenOption.TRUNCATE_EXISTING);
+
+        FileChannel channel = FileChannel.open(path, options);
 
         return new PrimeWriter(channel);
     }
@@ -52,7 +63,7 @@ public class PrimeWriter extends PrimeList implements AutoCloseable {
                 try {
                     flush();
                     tail = null;
-                    PrimeBuffer buffer = map(buffers.size());
+                    PrimeBuffer buffer = map(buffers.size()-1);
                     buffers.set(buffers.size() - 1, buffer);
                 } catch (IOException e) {
                     throw new UncheckedIOException(e);
@@ -62,7 +73,10 @@ public class PrimeWriter extends PrimeList implements AutoCloseable {
     }
 
     public void flush() throws IOException {
-        long seek = buffers.size() * PrimeBuffer.BYTES;
+        if(tail==null)
+            return;
+
+        long seek = (buffers.size()-1) * PrimeBuffer.BYTES;
         ByteBuffer buffer = tail.bytes;
         int lim = buffer.limit();
         int pos = buffer.position();
