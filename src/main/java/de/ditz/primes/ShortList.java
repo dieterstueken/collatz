@@ -29,7 +29,7 @@ public class ShortList implements AutoCloseable {
             if(bytes==null)
                 throw new NullPointerException();
 
-            if(bytes.position()>SIZE)
+            if(bytes.position()>2*SIZE)
                 throw new IllegalArgumentException("oversized");
         }
 
@@ -43,39 +43,27 @@ public class ShortList implements AutoCloseable {
             return bytes.position()/2;
         }
 
+        boolean hasRemaining() {
+            return bytes.hasRemaining();
+        }
+
         int getShort(int index) {
             short value = bytes.getShort(2*index);
             // make unsigned
             return value & 0xffff;
         }
 
-        void addShort(int index, int value) {
-            if((value&0xFFFF) != value)
-                throw new IllegalArgumentException("short overflow");
-
-            bytes.putShort((short)value);
-        }
     }
 
     protected ByteBuffer map(long index) throws IOException {
         long pos = index * Block.SIZE;
-        if(pos<0 || pos>size)
+        if(pos<0 || pos>=size)
             throw new IndexOutOfBoundsException("map");
 
-        int len = (int) Math.min(size - pos, Block.SIZE);
-
-        // special case of allocating new writable block.
-        if(len==0)
-            return null;
-
+        int len = (int) Math.min(size - pos, 2*Block.SIZE);
         ByteBuffer bytes = channel.map(FileChannel.MapMode.READ_ONLY, pos, len);
         bytes.position(bytes.limit());
         return bytes;
-    }
-
-    public static ShortList open(Path path) throws IOException {
-        FileChannel channel = FileChannel.open(path, StandardOpenOption.READ);
-        return new ShortList(channel);
     }
 
     final FileChannel channel;
@@ -104,17 +92,22 @@ public class ShortList implements AutoCloseable {
         }
     }
 
-    protected Block findBlock(int index) {
-        return index < blocks.size() ? blocks.get(index) : null;
+    protected Block findBlock(long index) {
+
+        // todo: have two stage list
+        if((index&0xFFFFFFFFL) != index)
+            throw new IndexOutOfBoundsException("overflow");
+
+        return index < blocks.size() ? blocks.get((int)index) : null;
     }
 
-    protected Block getBlock(int index) {
+    protected Block getBlock(long index) {
 
         Block block = findBlock(index);
         if(block!=null)
             return block;
 
-        if(index * Block.SIZE>=size)
+        if(index * Block.SIZE>size)
             throw new IndexOutOfBoundsException("block");
 
         synchronized(blocks) {
@@ -122,25 +115,40 @@ public class ShortList implements AutoCloseable {
             block = findBlock(index);
             if(block!=null)
                 return block;
+            
             block = mapBlock(index);
 
-            // fill any intermediate gap
-            while (blocks.size() < index)
-                blocks.add(null);
-
-            blocks.set(index, block);
+            setBlock(index, block);
             return block;
         }
     }
 
-    public int getShort(long index) {
-        int offset = (int) (index%Block.SIZE);
+    protected void setBlock(long index, Block block) {
 
-        index /= Block.SIZE;
+        // todo: have two stage list
         if((index&0xFFFFFFFFL) != index)
             throw new IndexOutOfBoundsException("overflow");
 
-        return getBlock((int)index).getShort(offset);
+        // fill any intermediate gap
+        while (blocks.size() <= index)
+            blocks.add(null);
+
+        blocks.set((int) index, block);
+    }
+
+    // block index
+    public long blix(long index) {
+        return (index + Block.SIZE - 1)/Block.SIZE;
+    }
+
+    public int get(long index) {
+        int offset = (int) (index%Block.SIZE);
+        return getBlock(blix(index)).getShort(offset);
+    }
+
+    public static ShortList open(Path path) throws IOException {
+        FileChannel channel = FileChannel.open(path, StandardOpenOption.READ);
+        return new ShortList(channel);
     }
 
     @Override
