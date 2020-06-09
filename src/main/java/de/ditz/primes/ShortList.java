@@ -9,6 +9,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.LongPredicate;
 
 /**
  * Created by IntelliJ IDEA.
@@ -16,10 +17,18 @@ import java.util.List;
  * Date: 07.06.20
  * Time: 10:43
  */
-public class ShortList implements AutoCloseable {
+public class ShortList implements LongList {
 
+    public int bits() {
+        return 16;
+    }
+
+    /**
+     * Max size: 2^31 * 2^25 -> 2^56 bytes = 2048 TB
+     */
     static class Block extends AbstractList<Short> {
         static final int SIZE = 1<<24;
+        static final int BYTES = 2*SIZE;
 
         final ByteBuffer bytes;
 
@@ -29,7 +38,7 @@ public class ShortList implements AutoCloseable {
             if(bytes==null)
                 throw new NullPointerException();
 
-            if(bytes.position()>2*SIZE)
+            if(bytes.position()>BYTES)
                 throw new IllegalArgumentException("oversized");
         }
 
@@ -53,6 +62,16 @@ public class ShortList implements AutoCloseable {
             return value & 0xffff;
         }
 
+        boolean forEach(LongPredicate until) {
+            int size = size();
+            for(int i=0; i<size; ++i) {
+                int value = getShort(i);
+                if(!until.test(value))
+                    return false;
+            }
+
+            return true;
+        }
     }
 
     protected ByteBuffer map(long index) throws IOException {
@@ -60,7 +79,7 @@ public class ShortList implements AutoCloseable {
         if(pos<0 || pos>=size)
             throw new IndexOutOfBoundsException("map");
 
-        int len = (int) Math.min(size - pos, 2*Block.SIZE);
+        int len = (int) Math.min(size - pos, Block.BYTES);
         ByteBuffer bytes = channel.map(FileChannel.MapMode.READ_ONLY, pos, len);
         bytes.position(bytes.limit());
         return bytes;
@@ -75,10 +94,9 @@ public class ShortList implements AutoCloseable {
     public ShortList(FileChannel channel) throws IOException {
         this.channel = channel;
         this.size = channel.size();
-        if(size>0)
-            blocks.add(mapBlock(0));
     }
 
+    @Override
     public long size() {
         return size;
     }
@@ -141,9 +159,26 @@ public class ShortList implements AutoCloseable {
         return (index + Block.SIZE - 1)/Block.SIZE;
     }
 
+    @Override
     public int get(long index) {
         int offset = (int) (index%Block.SIZE);
         return getBlock(blix(index)).getShort(offset);
+    }
+
+    @Override
+    public boolean forEach(LongPredicate until) {
+
+        for (Block block : blocks) {
+            if(!block.forEach(until))
+                return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public void add(long value) {
+        throw new UnsupportedOperationException("add");
     }
 
     public static ShortList open(Path path) throws IOException {
@@ -152,7 +187,11 @@ public class ShortList implements AutoCloseable {
     }
 
     @Override
-    public void close() throws IOException {
+    public void flush() {
+    }
+
+    @Override
+    public void close() throws IOException{
         channel.close();
     }
 }

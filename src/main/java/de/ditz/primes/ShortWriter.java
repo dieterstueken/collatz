@@ -22,7 +22,7 @@ public class ShortWriter extends ShortList {
     class Tail extends Block {
 
         Tail() throws IOException {
-            super(ByteBuffer.allocateDirect(2*Block.SIZE));
+            super(ByteBuffer.allocateDirect(Block.BYTES));
 
             if((size%Block.SIZE)!=0) {
                 long index = size / Block.SIZE;
@@ -84,11 +84,14 @@ public class ShortWriter extends ShortList {
         tail = new Tail();
     }
 
+    @Override
     public void flush() {
         tail.flush();
+        super.flush();
     }
 
     public void add(long value) {
+        // stores last 16 bits only
         tail.add(value);
     }
 
