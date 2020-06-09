@@ -57,7 +57,7 @@ public class Sieves {
             Sieve sieve = getSieve();
             long base = seed + id * 2 * SIZE;
             sieve.reset(base, SIZE);
-            primes.primes(sieve::sieve);
+            primes.forEachPrime(sieve::sieve);
             return sieve;
         }
 

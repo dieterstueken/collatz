@@ -45,7 +45,7 @@ public class PrimeList {
         return PrimeBuffer.buffer(bytes);
     }
 
-    public boolean primes(LongPredicate until) {
+    public boolean forEachPrime(LongPredicate until) {
         for (PrimeBuffer buffer : buffers) {
             if(!buffer.primes(until))
                 return false;
