@@ -68,7 +68,8 @@ public class IntFile extends AbstractList<Integer> implements RandomAccess, Auto
             ByteBuffer buffer = buffers.get(ib);
 
             for (int pos = index%buffers.bytes(); 4*pos < buffer.position(); ++pos) {
-                if (!until.test(buffer.getInt(4 * pos)))
+                int value = buffer.getInt(4 * pos);
+                if (!until.test(value))
                     return index;
                 ++index;
             }

@@ -14,6 +14,10 @@ import java.util.function.LongPredicate;
  */
 public class PrimeGenerator implements PrimeWriter, AutoCloseable {
 
+    // 393615962
+    //8589934583 0x1FFFFFFF7
+    //8589934609 0x200000011
+
     final IntFile primes;
 
     PrimeGenerator(File file) throws IOException {
@@ -38,14 +42,15 @@ public class PrimeGenerator implements PrimeWriter, AutoCloseable {
             throw new IllegalArgumentException("not a prime");
 
         int value = (int) (prime/2);
-        if(2L*value+1 != prime)
+        if(2*(value&0xffffffffL)+1 != prime)
             throw new IllegalArgumentException("overflow");
 
         return primes.putInt(value);
     }
     
     public long getPrime(long index) {
-        return 1+2L*primes.getInt((int) index);
+        long prime = 0xffffffffL & primes.getInt((int) index);
+        return 1+2*prime;
     }
 
     @Override
@@ -55,7 +60,7 @@ public class PrimeGenerator implements PrimeWriter, AutoCloseable {
 
     @Override
     public long forEachPrime(long index, LongPredicate until) {
-        return primes.forEachInt((int) index, i -> until.test(1+2*i));
+        return primes.forEachInt((int) index, i -> until.test(1+2L*i));
     }
 
     @Override

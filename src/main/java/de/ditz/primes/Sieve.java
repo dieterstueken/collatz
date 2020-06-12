@@ -51,31 +51,34 @@ public class Sieve {
 
     boolean sieve(long prime) {
 
+        // odd primes only
+        if(prime<3)
+            return true;
+
         long limit = base + 2*sieve.length();
 
         if(prime*prime>limit)
             return false;
 
-        if(1.0*prime*prime>limit)
-            throw new IllegalStateException();
-
-        // odd numbers only
-        if (prime > 2) {
-            int len = sieve.length();
-            for (int index = i0(prime); index < len; index += prime) {
-                sieve.clear(index);
-            }
+        int len = sieve.length();
+        for (int index = i0(prime); index < len; index += prime) {
+            sieve.clear(index);
         }
 
         return true;
     }
 
     void extract(LongUnaryOperator consumer) {
+        int len = sieve.length();
 
         for(int i=sieve.nextSetBit(0); i>=0; i=sieve.nextSetBit(i+1)) {
             long prime = base + 2*i;
             done = consumer.applyAsLong(prime);
-            sieve(prime);
+
+            // propagate
+            for(long j = prime+i; j<len; j+=prime) {
+                sieve.clear((int)j);
+            }
         }
     }
 
