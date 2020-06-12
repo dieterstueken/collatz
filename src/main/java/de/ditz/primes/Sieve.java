@@ -2,7 +2,7 @@ package de.ditz.primes;
 
 import java.io.PrintStream;
 import java.util.BitSet;
-import java.util.function.LongConsumer;
+import java.util.function.LongUnaryOperator;
 
 /**
  * Created by IntelliJ IDEA.
@@ -16,8 +16,14 @@ public class Sieve {
 
     long base = 0;
 
+    long done = 0;
+
     Sieve reset(long base, int size) {
+        if(base<0)
+            throw new IllegalArgumentException("negative base");
+
         this.base = base;
+        this.done = 0;
         sieve.clear();
         sieve.set(0, size);
         return this;
@@ -30,10 +36,28 @@ public class Sieve {
         return (int) Math.min(index, Integer.MAX_VALUE);
     }
 
+    public long sieve(PrimeStream primes) {
+        long start = done;
+
+        // repeat until stable while adding primes in parallel
+        long tmp;
+        do {
+            tmp = done;
+            done = primes.forEachPrime(tmp, this::sieve);
+        } while(done>tmp);
+
+        return done - start;
+    }
+
     boolean sieve(long prime) {
 
-        if(prime*prime>2*sieve.length())
+        long limit = base + 2*sieve.length();
+
+        if(prime*prime>limit)
             return false;
+
+        if(1.0*prime*prime>limit)
+            throw new IllegalStateException();
 
         // odd numbers only
         if (prime > 2) {
@@ -46,11 +70,11 @@ public class Sieve {
         return true;
     }
 
-    void extract(LongConsumer consumer) {
+    void extract(LongUnaryOperator consumer) {
 
         for(int i=sieve.nextSetBit(0); i>=0; i=sieve.nextSetBit(i+1)) {
             long prime = base + 2*i;
-            consumer.accept(prime);
+            done = consumer.applyAsLong(prime);
             sieve(prime);
         }
     }

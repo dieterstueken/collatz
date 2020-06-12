@@ -55,14 +55,17 @@ public class Sieves {
         @Override
         protected Sieve compute() {
             Sieve sieve = getSieve();
-            long base = seed + id * 2 * SIZE;
+            long base = seed + 2L * id * SIZE;
             sieve.reset(base, SIZE);
-            primes.forEachPrime(sieve::sieve);
+            sieve.sieve(primes);
             return sieve;
         }
 
         public void finish() {
             Sieve sieve = join();
+            long n = sieve.sieve(primes);
+            if(n>0)
+                n = 0;
             sieve.extract(primes::addPrime);
             setRawResult(null);
             releaseSieve(sieve);
@@ -81,9 +84,9 @@ public class Sieves {
                 for (int i = 0; i < parallel; ++i)
                     tasks.add(new Task( i0 + i));
 
-                tasks.forEach(ForkJoinTask::fork);
+                //tasks.forEach(ForkJoinTask::fork);
 
-                //ForkJoinTask.invokeAll(tasks);
+                ForkJoinTask.invokeAll(tasks);
 
                 return () -> {
                     tasks.forEach(Task::finish);

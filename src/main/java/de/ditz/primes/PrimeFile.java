@@ -15,18 +15,18 @@ import java.util.function.LongPredicate;
  * Date: 04.06.20
  * Time: 21:11
  */
-public class PrimeList {
+public class PrimeFile {
 
     final FileChannel channel;
 
     final List<PrimeBuffer> buffers = new ArrayList<>();
 
-    public static PrimeList open(Path path) throws IOException {
+    public static PrimeFile open(Path path) throws IOException {
         FileChannel channel = FileChannel.open(path, StandardOpenOption.READ);
-        return new PrimeList(channel);
+        return new PrimeFile(channel);
     }
 
-    protected PrimeList(FileChannel channel) throws IOException {
+    protected PrimeFile(FileChannel channel) throws IOException {
         this.channel = channel;
 
         int count = (int) ((channel.size() + PrimeBuffer.BYTES - 1) / PrimeBuffer.BYTES);
