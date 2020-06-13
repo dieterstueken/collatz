@@ -125,7 +125,7 @@ public class PrimeFiles implements PrimeStream, AutoCloseable {
 
     private FileEntry getEntry(int bias) {
         int size = entries.size();
-        if(bias< size)
+        if(bias<size)
             return entries.get(bias);
 
         if(bias!= size)
@@ -133,6 +133,10 @@ public class PrimeFiles implements PrimeStream, AutoCloseable {
 
         String name = String.format("primes_%04x", bias);
         Path path = new File(directory, name).toPath();
+
+        if(!Files.exists(path))
+            return null;
+
         FileEntry entry = new FileEntry(path, bias, count());
 
         entries.add(entry);
@@ -148,8 +152,8 @@ public class PrimeFiles implements PrimeStream, AutoCloseable {
     @Override
     public long forEachPrime(long index, LongPredicate until) {
 
-        for (FileEntry entry : entries) {
-            entry.primes().forEachInt()
+        for(int i=0; true; ++i) {
+
         }
 
     }

@@ -3,7 +3,6 @@ package de.ditz.primes;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Path;
-import java.util.AbstractList;
 import java.util.RandomAccess;
 import java.util.function.LongPredicate;
 
@@ -14,7 +13,7 @@ import java.util.function.LongPredicate;
  * modified by: $
  * modified on: $
  */
-public class PrimeFile extends AbstractList<Long> implements RandomAccess, AutoCloseable {
+public class PrimeFile implements RandomAccess, AutoCloseable {
 
     BufferedFile buffers;
 
@@ -50,7 +49,6 @@ public class PrimeFile extends AbstractList<Long> implements RandomAccess, AutoC
         return toPrime(value);
     }
 
-    @Override
     public Long get(int index) {
         return getPrime(index);
     }
