@@ -68,18 +68,20 @@ public class Sieve {
         return true;
     }
 
-    void extract(LongUnaryOperator consumer) {
+    public int extract(LongUnaryOperator consumer) {
         int len = sieve.length();
-
+        int count = 0;
         for(int i=sieve.nextSetBit(0); i>=0; i=sieve.nextSetBit(i+1)) {
             long prime = base + 2*i;
             done = consumer.applyAsLong(prime);
-
+            ++count;
             // propagate
             for(long j = prime+i; j<len; j+=prime) {
                 sieve.clear((int)j);
             }
         }
+
+        return count;
     }
 
     public void stat(PrintStream out) {

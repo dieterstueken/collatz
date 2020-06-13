@@ -14,7 +14,7 @@ import java.util.concurrent.RecursiveTask;
  */
 public class Sieves {
 
-    public static final int SIZE = 2<<15;
+    public static final int SIZE = 1<<16;
 
     final PrimeWriter primes;
 
@@ -61,14 +61,16 @@ public class Sieves {
             return sieve;
         }
 
-        public void finish() {
+        public int finish() {
             Sieve sieve = join();
             long n = sieve.sieve(primes);
             if(n>0)
                 n = 0;
-            sieve.extract(primes::addPrime);
+
+            int k = sieve.extract(primes::addPrime);
             setRawResult(null);
             releaseSieve(sieve);
+            return k;
         }
     }
 

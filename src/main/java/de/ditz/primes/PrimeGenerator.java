@@ -43,7 +43,7 @@ public class PrimeGenerator implements PrimeWriter, AutoCloseable {
 
         int value = (int) (prime/2);
         if(2*(value&0xffffffffL)+1 != prime)
-            throw new IllegalArgumentException("overflow");
+            throw new IllegalArgumentException("overflow at: " + prime);
 
         return primes.putInt(value);
     }
