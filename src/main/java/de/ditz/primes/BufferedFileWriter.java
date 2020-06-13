@@ -81,8 +81,10 @@ public class BufferedFileWriter extends BufferedFile {
     public static BufferedFileWriter open(Path path, boolean truncate) throws IOException {
         Set<StandardOpenOption> options = EnumSet.of(StandardOpenOption.CREATE,
                 StandardOpenOption.READ, StandardOpenOption.WRITE);
+
         if(truncate)
             options.add(StandardOpenOption.TRUNCATE_EXISTING);
+
         FileChannel channel = FileChannel.open(path, options);
         return new BufferedFileWriter(channel);
     }
