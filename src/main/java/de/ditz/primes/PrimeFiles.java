@@ -152,10 +152,7 @@ public class PrimeFiles implements PrimeStream, AutoCloseable {
     @Override
     public long forEachPrime(long index, LongPredicate until) {
 
-        for(int i=0; true; ++i) {
-
-        }
-
+     return 0;
     }
 
 }
