@@ -81,16 +81,19 @@ public class PrimeFile implements AutoCloseable {
         file.close();
     }
 
-    public static boolean forEachPrime(long base, ByteBuffer buffer, int pos, LongPredicate until) {
-
-        for(;pos<buffer.limit(); ++pos, base+=30) {
+    public static boolean forEachPrime(long base, int seek, ByteBuffer buffer, LongPredicate until) {
+        int skip = seek%30;
+        for(int pos=seek/30;pos<buffer.limit(); ++pos) {
             int bits = 0xff & buffer.get(pos);
             byte[] seq = SEQUENCES.get(bits);
             for (byte b : seq) {
-                long prime = base + b;
-                if (until.test(prime))
-                    return true;
+                if(b>=skip) {
+                    long prime = base + 30 * pos + b;
+                    if (until.test(prime))
+                        return true;
+                }
             }
+            skip = 0;
         }
 
         return false;
@@ -112,21 +115,14 @@ public class PrimeFile implements AutoCloseable {
 
         if(start<=5 && until.test(5))
             return true;
-        
+
         final int block = 30*file.bytes();
-        int pos = (int)(start % 30);
+        int pos = (int)(start % block);
 
-        LongPredicate predicate = pos==0 ? until : prime->prime>=start && until.test(prime);
-
-        for(long index = (int)(start / block); index<file.size(); ++index) {
+        for(long index = (int)(start / block); index<file.size(); ++index, pos=0) {
             ByteBuffer buffer = file.get((int)index);
-            long base = index * block + 30*pos;
-
-            if(forEachPrime(base, buffer, pos, predicate))
+            if(forEachPrime(index * block, pos, buffer, until))
                 return true;
-
-            pos = 0;
-            predicate = until;
         }
 
         return false;
@@ -144,7 +140,7 @@ public class PrimeFile implements AutoCloseable {
         File file = new File(args.length > 0 ? args[0] : "primes.dat");
 
         try(PrimeFile primes = new PrimeFile(BufferedFile.create(file.toPath()))) {
-            primes.forEach(11, System.out::println);
+            primes.forEach(97, System.out::println);
         }
 
     }
