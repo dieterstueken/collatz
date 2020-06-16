@@ -104,7 +104,7 @@ public class BufferedFile extends AbstractList<ByteBuffer> implements RandomAcce
 
         // truncate after last complete buffer
         if(size>count) {
-            buffers.remove(++size);
+            buffers.remove(--size);
         }
 
         channel.write(buffer);

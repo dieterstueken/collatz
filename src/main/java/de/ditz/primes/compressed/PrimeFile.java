@@ -81,55 +81,67 @@ public class PrimeFile implements AutoCloseable {
         file.close();
     }
 
+    public static long forEachOdd(long skip, LongPredicate until) {
+        for(long n=skip/30; true; ++n) {
+            long base = 30*n;
+            for (byte b : BASE30) {
+                long number = base + b;
+                if(number>skip)
+                    if(!until.test(number))
+                        return number;
+            }
+        }
+    }
+
     public static boolean forEachPrime(long base, int seek, ByteBuffer buffer, LongPredicate until) {
         int skip = seek%30;
         for(int pos=seek/30;pos<buffer.limit(); ++pos) {
             int bits = 0xff & buffer.get(pos);
             byte[] seq = SEQUENCES.get(bits);
             for (byte b : seq) {
-                if(b>=skip) {
+                if(b>skip) {
                     long prime = base + 30 * pos + b;
-                    if (until.test(prime))
-                        return true;
+                    if (!until.test(prime))
+                        return false;
                 }
             }
             skip = 0;
         }
 
-        return false;
+        return true;
     }
 
     /**
      *
-     * @param start value (inclusive)
+     * @param skip value (exclusive)
      * @param until condition to top
      * @return true if stopped by condition
      */
-    boolean forEachPrime(long start, LongPredicate until) {
+    boolean forEachPrime(long skip, LongPredicate until) {
 
-        if(start<=2 && until.test(2))
-            return true;
+        if(skip<2 && !until.test(2))
+            return false;
 
-        if(start<=3 && until.test(3))
-            return true;
+        if(skip<3 && !until.test(3))
+            return false;
 
-        if(start<=5 && until.test(5))
-            return true;
+        if(skip<5 && !until.test(5))
+            return false;
 
         final int block = 30*file.bytes();
-        int pos = (int)(start % block);
+        int pos = (int)(skip % block);
 
-        for(long index = (int)(start / block); index<file.size(); ++index, pos=0) {
+        for(long index = (int)(skip / block); index<file.size(); ++index, pos=0) {
             ByteBuffer buffer = file.get((int)index);
-            if(forEachPrime(index * block, pos, buffer, until))
-                return true;
+            if(!forEachPrime(index * block, pos, buffer, until))
+                return false;
         }
 
-        return false;
+        return true;
     }
 
     void forEach(long start, LongConsumer consumer) {
-        forEachPrime(start, prime -> {consumer.accept(prime); return false;});
+        forEachPrime(start, prime -> {consumer.accept(prime); return true;});
     }
 
     public void write(ByteBuffer buffer) throws IOException {
@@ -140,7 +152,7 @@ public class PrimeFile implements AutoCloseable {
         File file = new File(args.length > 0 ? args[0] : "primes.dat");
 
         try(PrimeFile primes = new PrimeFile(BufferedFile.create(file.toPath()))) {
-            primes.forEach(97, System.out::println);
+            primes.forEach(7, System.out::println);
         }
 
     }
