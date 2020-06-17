@@ -6,7 +6,10 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.*;
+import java.util.AbstractList;
+import java.util.EnumSet;
+import java.util.RandomAccess;
+import java.util.Set;
 
 /**
  * Created by IntelliJ IDEA.
@@ -24,8 +27,6 @@ public class BufferedFile extends AbstractList<ByteBuffer> implements RandomAcce
     final FileChannel channel;
 
     protected long length;
-
-    private final List<ByteBuffer> buffers = new ArrayList<>();
 
     protected BufferedFile(FileChannel channel) throws IOException {
         this.bytes = BYTES;
@@ -48,11 +49,11 @@ public class BufferedFile extends AbstractList<ByteBuffer> implements RandomAcce
 
     @Override
     public int size() {
-        // including possibly empty tail.
-        return 1 + (int)(this.length / bytes());
+        return (int)((this.length + bytes() - 1) / bytes());
     }
 
-    protected ByteBuffer map(int index) {
+    @Override
+    public ByteBuffer get(int index) {
         try {
             long pos = (long) index * bytes();
             int len = (int) Math.min(length - pos, bytes());
@@ -64,10 +65,6 @@ public class BufferedFile extends AbstractList<ByteBuffer> implements RandomAcce
         }
     }
 
-    protected ByteBuffer findBuffer(int index) {
-        return index < buffers.size() ? buffers.get(index) : null;
-    }
-
     public ByteBuffer get(long index) {
         if(index<size())
             return get((int)index);
@@ -75,38 +72,7 @@ public class BufferedFile extends AbstractList<ByteBuffer> implements RandomAcce
         throw new IndexOutOfBoundsException("index:" + index);
     }
 
-    @Override
-    public ByteBuffer get(int index) {
-        ByteBuffer buffer = findBuffer(index);
-        if (buffer != null)
-            return buffer;
-
-        synchronized (buffers) {
-            // double check
-            buffer = findBuffer(index);
-            if (buffer != null)
-                return buffer;
-
-            // extend list on demand
-            while (buffers.size() <= index)
-                buffers.add(null);
-
-            buffer = map(index);
-            buffers.set(index, buffer);
-        }
-
-        return buffer;
-    }
-
     public void write(ByteBuffer buffer) throws IOException {
-        int size = buffers.size();
-        long count = length / bytes();
-
-        // truncate after last complete buffer
-        if(size>count) {
-            buffers.remove(--size);
-        }
-
         channel.write(buffer);
         length = channel.size();
     }

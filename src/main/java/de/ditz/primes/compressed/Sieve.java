@@ -16,13 +16,25 @@ public class Sieve {
     private static final byte[] MASKS = new byte[30];
 
     static {
-        for(int i=0; i<8; ++i) {
-            int b = PrimeFile.base(i);
-            MASKS[b] = (byte)(1<<i);
-        }
-        for(int i=0; i<30; ++i)
-            MASKS[i] ^= 0xff;
+        Arrays.fill(MASKS, (byte)0xff);
+        Sequence.base().forEach(0, i->MASKS[(int)i]^=((byte)(1<<i)));
     }
+
+    static final Sequence ODDS = (seek, until) -> {
+        Sequence base = Sequence.base();
+
+        if(seek<7)
+            seek = 7;
+        else
+            seek %= 30;
+
+        for(long block = seek/30; block<Long.MAX_VALUE; ++block) {
+            if(base.based(30*block).forEachUntil(seek, until))
+                return true;
+        }
+
+        return false;
+    };
 
     long base = 0;
     final byte[] bytes;
@@ -35,6 +47,10 @@ public class Sieve {
 
     int size()  {
         return 30*buffer.limit();
+    }
+
+    long limit() {
+        return base + size();
     }
 
     void reset(long base) {
@@ -58,25 +74,25 @@ public class Sieve {
     }
 
     boolean sieve(long prime) {
-        long skip = Math.max(base / prime, 5);
+        long skip = Math.max(base / prime, 7);
 
-        long count = PrimeFile.forEachOdd(skip, factor -> clear(prime * factor));
-
-        if(count>0)
+        if(prime * skip >= limit())
             return true;
-        else
-            return false;
+
+        ODDS.forEachUntil(skip, factor -> clear(prime * factor));
+
+        return false;
     }
 
     void sieve(PrimeFile primes) {
 
         reset(primes.size());
 
-        primes.forEachPrime(5, this::sieve);
+        primes.forEachUntil(5, this::sieve);
     }
 
     static void testPrime(long prime) {
-        PrimeFile.forEachOdd(5, n -> {
+        ODDS.forEachUntil(7, n -> {
             if (n>prime/n)
                 return false;
 
@@ -95,7 +111,7 @@ public class Sieve {
     public ByteBuffer finish() {
 
         // find all primes on buffer
-        PrimeFile.forEachPrime(base, 0, buffer, this::_sieve);
+        Sequence.compact(buffer).based(base).forEachUntil(this::_sieve);
 
         return buffer;
     }
@@ -114,7 +130,5 @@ public class Sieve {
 
             primes.forEach(primes.size()-50, System.out::println);
         }
-
     }
-
 }

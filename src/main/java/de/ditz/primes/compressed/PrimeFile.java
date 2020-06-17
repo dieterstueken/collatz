@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.LongConsumer;
 import java.util.function.LongPredicate;
 
 /**
@@ -15,40 +14,11 @@ import java.util.function.LongPredicate;
  * modified by: $
  * modified on: $
  */
-public class PrimeFile implements AutoCloseable {
-
-    private static final byte[] BASE30 = {1,7,11,13,17,19,23,29};
-
-    public static int base(int i) {
-        int j = i/30;
-        int k = i%30;
-        return 30*j + PrimeFile.BASE30[k];
-    }
-
-    private static final List<byte[]> SEQUENCES;
-
-    static {
-        List<byte[]> sequences = new ArrayList<>(256);
-        ByteBuffer buffer = ByteBuffer.allocate(8);
-        for(int i=0; i<256; ++i) {
-            buffer.clear();
-            int m=i;
-            while(m!=0) {
-                byte bit = (byte)Integer.numberOfTrailingZeros(m);
-                buffer.put(BASE30[bit]);
-                m ^= 1<<bit;
-            }
-
-            buffer.flip();
-            byte[] seq = new byte[buffer.limit()];
-            buffer.get(seq);
-            sequences.add(seq);
-        }
-
-        SEQUENCES = List.copyOf(sequences);
-    }
+public class PrimeFile implements Sequence, AutoCloseable {
 
     final BufferedFile file;
+
+    final List<Sequence> sequences = new ArrayList<>();
 
     public PrimeFile(BufferedFile file) throws IOException {
         this.file = file;
@@ -81,74 +51,70 @@ public class PrimeFile implements AutoCloseable {
         file.close();
     }
 
-    public static long forEachOdd(long skip, LongPredicate until) {
-        long count = 0;
-        for(long n=skip/30; true; ++n) {
-            long base = 30*n;
-            for (byte b : BASE30) {
-                long number = base + b;
-                if(number>skip) {
-                    if (!until.test(number))
-                        return count;
-                    else
-                        ++count;
-                }
-            }
-        }
-    }
-
-    public static boolean forEachPrime(long base, int seek, ByteBuffer buffer, LongPredicate until) {
-        int skip = seek%30;
-        for(int pos=seek/30;pos<buffer.limit(); ++pos) {
-            int bits = 0xff & buffer.get(pos);
-            byte[] seq = SEQUENCES.get(bits);
-            for (byte b : seq) {
-                if(b>skip) {
-                    long prime = base + 30 * pos + b;
-                    if (!until.test(prime))
-                        return false;
-                }
-            }
-            skip = 0;
-        }
-
-        return true;
-    }
-
     /**
      *
      * @param skip value (exclusive)
      * @param until condition to top
      * @return true if stopped by condition
      */
-    boolean forEachPrime(long skip, LongPredicate until) {
+    public boolean forEachUntil(long skip, LongPredicate until) {
 
-        if(skip<2 && !until.test(2))
-            return false;
+        if(skip<2 && until.test(2))
+            return true;
 
-        if(skip<3 && !until.test(3))
-            return false;
+        if(skip<3 && until.test(3))
+            return true;
 
-        if(skip<5 && !until.test(5))
-            return false;
+        if(skip<5 && until.test(5))
+            return true;
 
         final int block = 30*file.bytes();
-        int pos = (int)(skip % block);
 
-        for(long index = (int)(skip / block); index<file.size(); ++index, pos=0) {
-            ByteBuffer buffer = file.get((int)index);
-            if(!forEachPrime(index * block, pos, buffer, until))
-                return false;
+        for(long index = (int)(skip / block); index<file.size(); ++index) {
+            if(getSequence((int)index).forEachUntil(skip, until))
+                return true;
         }
 
-        return true;
+        return false;
     }
 
-    void forEach(long start, LongConsumer consumer) {
-        forEachPrime(start, prime -> {consumer.accept(prime); return true;});
+    protected Sequence findSequence(int index) {
+         return index < sequences.size() ? sequences.get(index) : null;
+    }
+
+    Sequence getSequence(int index) {
+        Sequence sequence = findSequence(index);
+        if (sequence != null)
+            return sequence;
+
+        synchronized (sequences) {
+                    // double check
+            sequence = findSequence(index);
+            if (sequence != null)
+                return sequence;
+
+            // extend list on demand
+            while (sequences.size() <= index)
+                sequences.add(null);
+
+            ByteBuffer buffer = file.get(index);
+            sequence = Sequence.compact(buffer).based(30*index*file.bytes());
+            sequences.set(index, sequence);
+        }
+
+        return sequence;
     }
 
     public void write(ByteBuffer buffer) throws IOException {
+
+        int size = sequences.size();
+        long count = file.length / file.bytes();
+
+        // truncate after last complete buffer
+        if(size>count) {
+            sequences.remove(--size);
+        }
+
         file.write(buffer);
     }
 
