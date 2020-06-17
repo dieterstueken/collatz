@@ -60,46 +60,42 @@ public class Sieve {
     boolean sieve(long prime) {
         long skip = Math.max(base / prime, 5);
 
-        if(prime*prime<base+size()) {
-            PrimeFile.forEachOdd(skip, factor -> clear(prime * factor));
+        long count = PrimeFile.forEachOdd(skip, factor -> clear(prime * factor));
+
+        if(count>0)
             return true;
-        } else
+        else
             return false;
     }
 
     void sieve(PrimeFile primes) {
 
-        long length = primes.file.length();
-        reset(30*length);
-
-        long limit = 30*length*length;
-        if(limit<buffer.limit())
-            buffer.limit((int)limit);
+        reset(primes.size());
 
         primes.forEachPrime(5, this::sieve);
     }
 
-    static boolean isPrime(long prime) {
-        return factor(prime)<2;
-    }
+    static void testPrime(long prime) {
+        PrimeFile.forEachOdd(5, n -> {
+            if (n>prime/n)
+                return false;
 
-    static long factor(long prime) {
+            if ((prime % n) != 0)
+                return true;
 
-        long k = PrimeFile.forEachOdd(5, n -> n*n<=prime && (prime%n)!=0);
-
-        return k*k<prime ? k : 1;
+            throw new IllegalStateException("not a prime: " + prime);
+        });
     }
 
     boolean _sieve(long prime) {
-        if(!isPrime(prime))
-            throw new IllegalStateException("not a prime: " + prime);
+        testPrime(prime);
         return sieve(prime);
     }
 
     public ByteBuffer finish() {
 
         // find all primes on buffer
-        PrimeFile.forEachPrime(base, 0, buffer, this::sieve);
+        PrimeFile.forEachPrime(base, 0, buffer, this::_sieve);
 
         return buffer;
     }

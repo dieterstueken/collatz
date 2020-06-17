@@ -82,13 +82,17 @@ public class PrimeFile implements AutoCloseable {
     }
 
     public static long forEachOdd(long skip, LongPredicate until) {
+        long count = 0;
         for(long n=skip/30; true; ++n) {
             long base = 30*n;
             for (byte b : BASE30) {
                 long number = base + b;
-                if(number>skip)
-                    if(!until.test(number))
-                        return number;
+                if(number>skip) {
+                    if (!until.test(number))
+                        return count;
+                    else
+                        ++count;
+                }
             }
         }
     }
