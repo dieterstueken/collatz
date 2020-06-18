@@ -61,5 +61,12 @@ public interface Sequence {
         };
     }
 
+    static void main(String ... args) {
+        for(int i=0; i<SEQUENCES.size(); ++i){
+            System.out.format("%02x:", i);
+            sequence(i).forEach(0, n->System.out.format(" %d", n));
+            System.out.println();
+        }
+    }
 }
 

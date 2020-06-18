@@ -1,5 +1,7 @@
 package de.ditz.primes.compressed;
 
+import java.util.Arrays;
+
 /**
  * Created by IntelliJ IDEA.
  * User: stueken
@@ -14,10 +16,14 @@ interface Sequences {
         if(index>255)
             throw new IndexOutOfBoundsException();
 
+        if(index==255)
+            return sequence(base);
+
         byte[] seq = new byte[Integer.bitCount(index)];
+        Arrays.fill(seq, (byte)0xff);
         int n = 0;
         for(int i=0; i<8; ++i) {
-            int m = 1<<8;
+            int m = 1<<i;
             if((index&m)!=0)
                 seq[n++] = base[i];
         }
@@ -28,11 +34,10 @@ interface Sequences {
     static Sequence sequence(byte[] seq) {
         return (seek, until) -> {
             for (byte b : seq) {
-                if(b>=seek && until.test(0xff & b))
+                if (b >= seek && until.test(0xff & b))
                     return true;
             }
             return false;
         };
     }
-
 }
