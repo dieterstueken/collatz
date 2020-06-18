@@ -24,7 +24,7 @@ public class Sieve {
         Sequence base = Sequence.base();
 
         if(seek<7)
-            seek = 7;
+            seek = 5;
         else
             seek %= 30;
 
@@ -74,7 +74,7 @@ public class Sieve {
     }
 
     boolean sieve(long prime) {
-        long skip = Math.max(base / prime, 7);
+        long skip = Math.max(base / prime, 5);
 
         if(prime * skip >= limit())
             return true;
@@ -92,7 +92,7 @@ public class Sieve {
     }
 
     static void testPrime(long prime) {
-        ODDS.forEachUntil(7, n -> {
+        ODDS.forEachUntil(5, n -> {
             if (n>prime/n)
                 return false;
 
@@ -122,7 +122,7 @@ public class Sieve {
         try(PrimeFile primes = new PrimeFile(BufferedFile.create(file.toPath()))) {
             Sieve sieve = new Sieve(1024);
 
-            for(int i=0; i<1<<27; ++i) {
+            for(int i=0; i<4; ++i) {
                 sieve.sieve(primes);
                 final ByteBuffer buffer = sieve.finish();
                 primes.write(buffer);
