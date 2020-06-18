@@ -122,8 +122,14 @@ public class PrimeFile implements Sequence, AutoCloseable {
         File file = new File(args.length > 0 ? args[0] : "primes.dat");
 
         try(PrimeFile primes = new PrimeFile(BufferedFile.create(file.toPath()))) {
-            primes.forEach(7, System.out::println);
+            primes.forEach(System.out::println);
         }
 
+        System.out.println();
+
+        Sieve.ODDS.forEachUntil(42, i-> {
+            System.out.println(i);
+            return i>100;
+        });
     }
 }

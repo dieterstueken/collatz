@@ -15,28 +15,25 @@ import java.util.stream.IntStream;
  */
 public interface Sequence {
 
-    boolean forEachUntil(long seek, LongPredicate until);
+    boolean forEachUntil(long skip, LongPredicate until);
 
     default boolean forEachUntil(LongPredicate until) {
         return forEachUntil(0, until);
     }
 
-    default void forEach(long seek, LongConsumer consumer) {
-        forEachUntil(seek, i -> {consumer.accept(i); return false;});
+    default void forEach(long skip, LongConsumer consumer) {
+        forEachUntil(skip, i -> {consumer.accept(i); return false;});
     }
 
-    default Sequence seek(long n) {
-        if(n>0)
-            return (seek, until) -> forEachUntil(seek + n, until);
-        else
-            return this;
+    default void forEach(LongConsumer consumer) {
+        forEachUntil(0, i -> {consumer.accept(i); return false;});
     }
 
     default Sequence based(long base) {
         if(base==0)
             return this;
         else
-            return (seek, until) -> forEachUntil(seek - base, i -> until.test(base+i));
+            return (skip, until) -> forEachUntil(skip - base, i -> until.test(base+i));
     }
 
     List<Sequence> SEQUENCES = IntStream.range(0, 256).mapToObj(Sequences::compact)
@@ -51,10 +48,10 @@ public interface Sequence {
     }
 
     static Sequence compact(ByteBuffer buffer) {
-        return (seek, until) -> {
-            for(long pos=seek/30; pos<buffer.limit(); ++pos) {
+        return (skip, until) -> {
+            for(long pos=skip>0?skip/30:0; pos<buffer.limit(); ++pos) {
                 int msk = 0xff & buffer.get((int)pos);
-                if(sequence(msk).based(30*pos).forEachUntil(seek, until))
+                if(sequence(msk).based(30*pos).forEachUntil(skip, until))
                     return true;
             }
             return false;

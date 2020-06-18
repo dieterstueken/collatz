@@ -17,19 +17,24 @@ public class Sieve {
 
     static {
         Arrays.fill(MASKS, (byte)0xff);
-        Sequence.base().forEach(0, i->MASKS[(int)i]^=((byte)(1<<i)));
+        ByteBuffer buffer = ByteBuffer.allocate(8);
+        Sequence.base().forEach(0, i->buffer.put((byte)i));
+        buffer.flip();
+        while(buffer.hasRemaining()) {
+            int m = 1 << buffer.position();
+            byte i = buffer.get();
+            MASKS[i] ^= m;
+        }
     }
 
-    static final Sequence ODDS = (seek, until) -> {
+    static final Sequence ODDS = (skip, until) -> {
         Sequence base = Sequence.base();
 
-        if(seek<7)
-            seek = 5;
-        else
-            seek %= 30;
+        if(skip<5)
+            skip = 5;
 
-        for(long block = seek/30; block<Long.MAX_VALUE; ++block) {
-            if(base.based(30*block).forEachUntil(seek, until))
+        for(long block = skip/30; block<Long.MAX_VALUE; ++block) {
+            if(base.based(30*block).forEachUntil(skip, until))
                 return true;
         }
 
@@ -67,10 +72,10 @@ public class Sieve {
             int i = (int)((index-base)%30);
             int mask = MASKS[i];
             bytes[(int)pos] &= mask;
-            return true;
+            return false;
         }
 
-        return false;
+        return true;
     }
 
     boolean sieve(long prime) {
@@ -111,7 +116,7 @@ public class Sieve {
     public ByteBuffer finish() {
 
         // find all primes on buffer
-        Sequence.compact(buffer).based(base).forEachUntil(this::_sieve);
+        Sequence.compact(buffer).based(base).forEachUntil(this::sieve);
 
         return buffer;
     }
@@ -122,7 +127,7 @@ public class Sieve {
         try(PrimeFile primes = new PrimeFile(BufferedFile.create(file.toPath()))) {
             Sieve sieve = new Sieve(1024);
 
-            for(int i=0; i<4; ++i) {
+            for(int i=0; i<1<<12; ++i) {
                 sieve.sieve(primes);
                 final ByteBuffer buffer = sieve.finish();
                 primes.write(buffer);
