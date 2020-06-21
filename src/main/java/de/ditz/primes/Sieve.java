@@ -207,8 +207,10 @@ public class Sieve extends RecursiveAction {
 
         long size = 1;
 
+        long start = System.currentTimeMillis();
+
         try(PrimeFile primes = PrimeFile.append(file);
-            Until until = new Until(30L<<32)) {
+            Until until = new Until(30L<<30)) {
 
             try {
                 Sieve.sieve(primes, until);
@@ -217,7 +219,10 @@ public class Sieve extends RecursiveAction {
                 size = file.length();
             }
         } finally {
-            System.out.format("size: 2^%.1f\n", Math.log(size)/Math.log(2));
+            long stop = System.currentTimeMillis();
+
+            System.out.format("size: 2^%.1f, %.1fs\n", Math.log(size)/Math.log(2),
+                    (stop-start)/1000.0);
         }
     }
 }
