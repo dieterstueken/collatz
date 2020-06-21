@@ -4,6 +4,9 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.concurrent.RecursiveAction;
+import java.util.function.LongPredicate;
 
 /**
  * Created by IntelliJ IDEA.
@@ -11,7 +14,7 @@ import java.util.Arrays;
  * Date: 14.06.20
  * Time: 20:15
  */
-public class Sieve {
+public class Sieve extends RecursiveAction {
 
     private static final byte[] MASKS = new byte[30];
 
@@ -38,6 +41,10 @@ public class Sieve {
             return Long.MIN_VALUE;
         else
             return Long.MAX_VALUE;
+    }
+
+    public static long squared(long l) {
+        return Sieve.product(l,l);
     }
 
     static final Sequence ODDS = (base, skip, until) -> {
@@ -90,12 +97,18 @@ public class Sieve {
         this.base = base;
         buffer.clear();
         Arrays.fill(bytes, (byte)(0xff));
+
+        base = primes.size();
         long limit = product(base, base);
         if(limit<limit()) {
             limit -= base;
             limit /= 30;
+            if(limit<0)
+                limit = 0;
             buffer.limit((int)limit);
         }
+
+        this.reinitialize();
     }
 
     boolean clear(long index) {
@@ -130,10 +143,7 @@ public class Sieve {
         return false;
     }
 
-    void sieve() {
-
-        reset(primes.size());
-
+    public void compute() {
         primes.forEach(5, this::sieve);
     }
 
@@ -150,18 +160,48 @@ public class Sieve {
         primes.write(buffer);
     }
 
+    public static void sieve(PrimeFile primes, LongPredicate until) {
+        final int BYTES = 1<<20;
+
+        long base = primes.size();
+
+        final LinkedList<Sieve> sieves = new LinkedList<>();
+
+        // last available task
+        Sieve sieve = null;
+
+        while(!until.test(base)) {
+            long limit = squared(primes.size());
+
+            while(base < limit && sieves.size()<16 && !until.test(base)) {
+                if(sieve==null)
+                    sieve = new Sieve(primes, BYTES);
+
+                sieve.reset(base);
+                base = sieve.limit();
+
+                sieve.fork();
+                sieves.add(sieve);
+                sieve = null;
+            }
+
+            sieve = sieves.pollFirst();
+            if(sieve==null)
+                break;
+
+            sieve.join();
+            sieve.finish();
+        }
+    }
+
     public static void main(String ... args) throws IOException {
         File file = new File(args.length > 0 ? args[0] : "primes.dat");
 
         try(PrimeFile primes = new PrimeFile(BufferedFile.create(file.toPath()))) {
-            Sieve sieve = new Sieve(primes, 1<<20);
 
-            for(int i=0; i<100; ++i) {
-                sieve.sieve();
-                sieve.finish();
-            }
+            Sieve.sieve(primes, p -> p>1L<<32);
 
-            primes.forEach(primes.size()-50, Sequence.each(System.out::println));
+            primes.forEach(primes.size()-1000, Sequence.each(System.out::println));
         }
     }
 }
