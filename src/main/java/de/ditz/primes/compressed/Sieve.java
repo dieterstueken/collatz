@@ -32,10 +32,9 @@ public class Sieve extends RecursiveAction {
 
     public static long product(long a, long b) {
 
-        long m = Math.abs(a);
-        m |= Math.abs(b);
-        if(m>>>31==0)
-            return a*b;
+        long product = a*b;
+        if(product/a==b)
+            return product;
 
         if((a^b)<0)
             return Long.MIN_VALUE;
@@ -93,22 +92,23 @@ public class Sieve extends RecursiveAction {
         return base + size();
     }
 
-    void reset(long base) {
+    int reset(long base) {
         this.base = base;
         buffer.clear();
         Arrays.fill(bytes, (byte)(0xff));
 
-        base = primes.size();
-        long limit = product(base, base);
-        if(limit<limit()) {
-            limit -= base;
-            limit /= 30;
-            if(limit<0)
-                limit = 0;
+        // limited (bytes) by size of primes
+        long limit = product(30, squared(primes.bytes())) - base/30;
+
+        if(limit<0)
+            limit = 0;
+
+        if(limit<buffer.capacity())
             buffer.limit((int)limit);
-        }
 
         this.reinitialize();
+
+        return buffer.limit();
     }
 
     boolean clear(long index) {
@@ -163,27 +163,35 @@ public class Sieve extends RecursiveAction {
     public static void sieve(PrimeFile primes, LongPredicate until) {
         final int BYTES = 1<<20;
 
-        long base = primes.size();
+        long bytes = primes.bytes();
 
         final LinkedList<Sieve> sieves = new LinkedList<>();
 
         // last available task
         Sieve sieve = null;
 
-        while(!until.test(base)) {
-            long limit = squared(primes.size());
+        while(!until.test(30*bytes)) {
+            // bytes
+            long limit = product(30, squared(primes.bytes()));
 
-            while(base < limit && sieves.size()<16 && !until.test(base)) {
+            while(bytes < limit && sieves.size()<16 && !until.test(30*bytes)) {
                 if(sieve==null)
                     sieve = new Sieve(primes, BYTES);
 
-                sieve.reset(base);
-                base = sieve.limit();
+                int len = sieve.reset(30*bytes);
+                if(len<=0)
+                    throw new IllegalStateException();
+
+                bytes += len;
 
                 sieve.fork();
                 sieves.add(sieve);
                 sieve = null;
             }
+
+            // if !until() sieves are released until sieves becomes empty
+            //if(sieve!=null) // should grow, sieve not used ??
+            //    throw new IllegalStateException();
 
             sieve = sieves.pollFirst();
             if(sieve==null)
@@ -197,11 +205,19 @@ public class Sieve extends RecursiveAction {
     public static void main(String ... args) throws IOException {
         File file = new File(args.length > 0 ? args[0] : "primes.dat");
 
-        try(PrimeFile primes = new PrimeFile(BufferedFile.create(file.toPath()))) {
+        long size = 1;
 
-            Sieve.sieve(primes, p -> p>1L<<32);
+        try(PrimeFile primes = PrimeFile.append(file);
+            Until until = new Until(30L<<32)) {
 
-            primes.forEach(primes.size()-1000, Sequence.each(System.out::println));
+            try {
+                Sieve.sieve(primes, until);
+                primes.forEach(primes.size() - 1000, Sequence.each(System.out::println));
+            } finally {
+                size = file.length();
+            }
+        } finally {
+            System.out.format("size: 2^%.1f\n", Math.log(size)/Math.log(2));
         }
     }
 }

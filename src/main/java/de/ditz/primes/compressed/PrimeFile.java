@@ -16,11 +16,23 @@ import java.util.function.LongPredicate;
  */
 public class PrimeFile implements Sequence, AutoCloseable {
 
+    public static PrimeFile create(File file) throws IOException {
+        return new PrimeFile(BufferedFile.create(file.toPath()));
+    }
+
+    public static PrimeFile append(File file) throws IOException {
+        return new PrimeFile(BufferedFile.append(file.toPath()));
+    }
+
+    public static PrimeFile open(File file) throws IOException {
+        return new PrimeFile(BufferedFile.open(file.toPath()));
+    }
+
     final BufferedFile file;
 
     final List<Sequence> sequences = new ArrayList<>();
 
-    public PrimeFile(BufferedFile file) throws IOException {
+    public PrimeFile(BufferedFile file) {
         this.file = file;
 
         if(file.length()<4) {
@@ -42,8 +54,12 @@ public class PrimeFile implements Sequence, AutoCloseable {
      *
      * @return number of checked numbers so far.
      */
-    long size() {
-        return file.length() * 30;
+    public long size() {
+        return 30*bytes();
+    }
+
+    public long bytes() {
+        return file.length();
     }
 
     @Override

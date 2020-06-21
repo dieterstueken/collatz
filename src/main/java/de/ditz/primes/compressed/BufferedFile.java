@@ -74,7 +74,8 @@ public class BufferedFile extends AbstractList<ByteBuffer> implements RandomAcce
 
     public void write(ByteBuffer buffer) {
         try {
-            channel.write(buffer);
+            channel.position(length);
+            int written = channel.write(buffer);
             length = channel.size();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
