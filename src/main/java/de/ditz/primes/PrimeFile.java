@@ -1,111 +1,162 @@
 package de.ditz.primes;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.file.Path;
-import java.util.RandomAccess;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.LongPredicate;
 
 /**
  * version:     $
  * created by:  d.stueken
- * created on:  11.06.2020 13:46
+ * created on:  14.06.2020 14:32
  * modified by: $
  * modified on: $
  */
-public class PrimeFile implements RandomAccess, AutoCloseable {
+public class PrimeFile implements Sequence, AutoCloseable {
 
-    BufferedFile buffers;
-
-    final int bias;
-
-    protected PrimeFile(BufferedFile buffers, int bias) {
-        this.buffers = buffers;
-        this.bias = bias;
+    public static PrimeFile create(File file) throws IOException {
+        return new PrimeFile(BufferedFile.create(file.toPath()));
     }
 
-    protected PrimeFile(BufferedFile buffers) {
-        this(buffers, 0);
+    public static PrimeFile append(File file) throws IOException {
+        return new PrimeFile(BufferedFile.append(file.toPath()));
     }
 
-    public int size() {
-        return (int)(buffers.length()/4);
+    public static PrimeFile open(File file) throws IOException {
+        return new PrimeFile(BufferedFile.open(file.toPath()));
     }
 
-    private long toPrime(int value) {
+    final BufferedFile file;
 
-        // unsigned
-        long prime = 0xffffffffL & value;
-        prime += (long)bias << 32;
+    final List<Sequence> sequences = new ArrayList<>();
 
-        // odd values only
-        return 2*prime + 1;
+    public PrimeFile(BufferedFile file) {
+        this.file = file;
+
+        if(file.length()<4) {
+            if(file.length()!=0)
+                throw new IllegalStateException();
+
+            byte[] initial = {
+                    (byte)0xfe, // 1
+                    (byte)0xdf, // 49
+                    (byte)0xef, // 77
+                    (byte)0x7e  // 91, 119
+            };
+            ByteBuffer buffer = ByteBuffer.wrap(initial);
+            write(buffer);
+        }
     }
 
-    public long getPrime(int index) {
-        int count = buffers.bytes() / 4;
-        ByteBuffer buffer = buffers.get(index / count);
-        int value = buffer.getInt(4 * (index % count));
-        return toPrime(value);
+    /**
+     *
+     * @return number of checked numbers so far.
+     */
+    public long size() {
+        return 30*bytes();
     }
 
-    public Long get(int index) {
-        return getPrime(index);
-    }
-
-    public int putPrime(long prime) {
-        if(prime<3 || (prime&1)==0)
-            throw new IllegalArgumentException("not a prime: " + prime);
-
-        if(prime>>33 != bias)
-            throw new IllegalArgumentException("bias mismatch");
-
-        int tail = (int)(prime/2);
-        buffers.putInt(tail);
-
-        return size();
-    }
-
-    public void flush() {
-        buffers.flush();
+    public long bytes() {
+        return file.length();
     }
 
     @Override
     public void close() throws IOException {
-        buffers.close();
+        file.close();
     }
 
-    public static PrimeFile open(Path path) throws IOException {
-        BufferedFile file = BufferedFile.open(path);
-        return new PrimeFile(file);
-    }
+    /**
+     *
+     * @param skip value (exclusive)
+     * @param until condition to top
+     * @return true if stopped by condition
+     */
+    @Override
+    public boolean forEach(long skip, LongPredicate until) {
 
-    public static PrimeFile create(Path path) throws IOException {
-        BufferedFile file = BufferedFileWriter.create(path);
-        return new PrimeFile(file);
-    }
+        if(skip<5) {
+            if(skip<2 && until.test(2))
+                return true;
 
-    public static PrimeFile append(Path path) throws IOException {
-        BufferedFile file = BufferedFileWriter.append(path);
-        return new PrimeFile(file);
-    }
+            if(skip<3 && until.test(3))
+                return true;
 
-    public int forEachInt(int index, LongPredicate until) {
-
-        int count = buffers.size();
-        for(int ib=index/buffers.bytes(); ib<count; ++ib) {
-            ByteBuffer buffer = buffers.get(ib);
-
-            for (int pos = index%buffers.bytes(); 4*pos < buffer.position(); ++pos) {
-                int value = buffer.getInt(4 * pos);
-                long prime = toPrime(value);
-                if (!until.test(prime))
-                    return index;
-                ++index;
-            }
-
+            if(until.test(5))
+                return true;
         }
 
-        return index;
+        final int block = 30*file.bytes();
+
+        for(long index = (int)(skip / block); index<file.size(); ++index) {
+            if(getSequence((int)index).forEach(skip, until))
+                return true;
+        }
+
+        return false;
+    }
+
+    @Override
+    public boolean forEach(long base, long skip, LongPredicate until) {
+        if(base==0)
+            return forEach(skip, until);
+        else
+            return forEach(skip, i -> until.test(base+i));
+    }
+
+    protected Sequence findSequence(int index) {
+         return index < sequences.size() ? sequences.get(index) : null;
+    }
+
+    Sequence getSequence(int index) {
+        Sequence sequence = findSequence(index);
+        if (sequence != null)
+            return sequence;
+
+        synchronized (sequences) {
+                    // double check
+            sequence = findSequence(index);
+            if (sequence != null)
+                return sequence;
+
+            // extend list on demand
+            while (sequences.size() <= index)
+                sequences.add(null);
+
+            ByteBuffer buffer = file.get(index);
+            sequence = Sequence.compact(buffer).based(30*index*file.bytes());
+            sequences.set(index, sequence);
+        }
+
+        return sequence;
+    }
+
+    public void write(ByteBuffer buffer) {
+
+        int size = sequences.size();
+        long count = file.length / file.bytes();
+
+        // truncate after last complete buffer
+        if(size>count) {
+            sequences.remove(--size);
+        }
+
+        file.write(buffer);
+    }
+
+    public static void main(String ... args) throws IOException {
+        File file = new File(args.length > 0 ? args[0] : "primes.dat");
+
+        try(PrimeFile primes = new PrimeFile(BufferedFile.create(file.toPath()))) {
+            primes.forEach(Sequence.each(System.out::println));
+        }
+
+        System.out.println();
+
+        Sieve.ODDS.forEach(42, i-> {
+            System.out.println(i);
+            return i>100;
+        });
     }
 }

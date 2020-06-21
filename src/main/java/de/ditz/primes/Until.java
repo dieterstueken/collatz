@@ -1,4 +1,4 @@
-package de.ditz.primes.compressed;
+package de.ditz.primes;
 
 import sun.misc.Signal;
 import sun.misc.SignalHandler;

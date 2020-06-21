@@ -1,4 +1,4 @@
-package de.ditz.primes.compressed;
+package de.ditz.primes;
 
 import java.nio.ByteBuffer;
 import java.util.List;
