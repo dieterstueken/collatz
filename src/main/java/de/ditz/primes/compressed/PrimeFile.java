@@ -57,25 +57,36 @@ public class PrimeFile implements Sequence, AutoCloseable {
      * @param until condition to top
      * @return true if stopped by condition
      */
-    public boolean forEachUntil(long skip, LongPredicate until) {
+    @Override
+    public boolean forEach(long skip, LongPredicate until) {
 
-        if(skip<2 && until.test(2))
-            return true;
+        if(skip<5) {
+            if(skip<2 && until.test(2))
+                return true;
 
-        if(skip<3 && until.test(3))
-            return true;
+            if(skip<3 && until.test(3))
+                return true;
 
-        if(skip<5 && until.test(5))
-            return true;
+            if(until.test(5))
+                return true;
+        }
 
         final int block = 30*file.bytes();
 
         for(long index = (int)(skip / block); index<file.size(); ++index) {
-            if(getSequence((int)index).forEachUntil(skip, until))
+            if(getSequence((int)index).forEach(skip, until))
                 return true;
         }
 
         return false;
+    }
+
+    @Override
+    public boolean forEach(long base, long skip, LongPredicate until) {
+        if(base==0)
+            return forEach(skip, until);
+        else
+            return forEach(skip, i -> until.test(base+i));
     }
 
     protected Sequence findSequence(int index) {
@@ -105,7 +116,7 @@ public class PrimeFile implements Sequence, AutoCloseable {
         return sequence;
     }
 
-    public void write(ByteBuffer buffer) throws IOException {
+    public void write(ByteBuffer buffer) {
 
         int size = sequences.size();
         long count = file.length / file.bytes();
@@ -122,12 +133,12 @@ public class PrimeFile implements Sequence, AutoCloseable {
         File file = new File(args.length > 0 ? args[0] : "primes.dat");
 
         try(PrimeFile primes = new PrimeFile(BufferedFile.create(file.toPath()))) {
-            primes.forEach(System.out::println);
+            primes.forEach(Sequence.each(System.out::println));
         }
 
         System.out.println();
 
-        Sieve.ODDS.forEachUntil(42, i-> {
+        Sieve.ODDS.forEach(42, i-> {
             System.out.println(i);
             return i>100;
         });

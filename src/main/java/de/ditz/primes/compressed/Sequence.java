@@ -15,25 +15,26 @@ import java.util.stream.IntStream;
  */
 public interface Sequence {
 
-    boolean forEachUntil(long skip, LongPredicate until);
+    boolean forEach(long base, long skip, LongPredicate until);
 
-    default boolean forEachUntil(LongPredicate until) {
-        return forEachUntil(0, until);
+    default boolean forEach(long skip, LongPredicate until) {
+        return forEach(0, skip, until);
     }
 
-    default void forEach(long skip, LongConsumer consumer) {
-        forEachUntil(skip, i -> {consumer.accept(i); return false;});
-    }
-
-    default void forEach(LongConsumer consumer) {
-        forEachUntil(0, i -> {consumer.accept(i); return false;});
+    default boolean forEach(LongPredicate until) {
+        return forEach(0, 0, until);
     }
 
     default Sequence based(long base) {
-        if(base==0)
-            return this;
-        else
-            return (skip, until) -> forEachUntil(skip - base, i -> until.test(base+i));
+        return (b, s, u) -> forEach(base+b, s, p->u.test(base+p));
+    }
+
+    default Sequence skipped(long skip) {
+        return (b,s,u) -> forEach(b, Math.max(s, skip), u);
+    }
+
+    static LongPredicate each(LongConsumer consumer) {
+        return i -> {consumer.accept(i); return false;};
     }
 
     List<Sequence> SEQUENCES = IntStream.range(0, 256).mapToObj(Sequences::compact)
@@ -43,15 +44,16 @@ public interface Sequence {
         return SEQUENCES.get(mask);
     }
 
-    static Sequence base() {
+    static Sequence base30() {
         return sequence(0xff);
     }
 
     static Sequence compact(ByteBuffer buffer) {
-        return (skip, until) -> {
-            for(long pos=skip>0?skip/30:0; pos<buffer.limit(); ++pos) {
+        return (base, skip, until) -> {
+
+            for(long pos=skip<base?0:(skip-base)/30; pos<buffer.limit(); ++pos) {
                 int msk = 0xff & buffer.get((int)pos);
-                if(sequence(msk).based(30*pos).forEachUntil(skip, until))
+                if(sequence(msk).forEach(30*pos + base, skip, until))
                     return true;
             }
             return false;
@@ -61,7 +63,7 @@ public interface Sequence {
     static void main(String ... args) {
         for(int i=0; i<SEQUENCES.size(); ++i){
             System.out.format("%02x:", i);
-            sequence(i).forEach(0, n->System.out.format(" %d", n));
+            sequence(i).forEach(0, 0, each(n->System.out.format(" %d", n)));
             System.out.println();
         }
     }

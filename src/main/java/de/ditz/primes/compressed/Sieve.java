@@ -18,7 +18,7 @@ public class Sieve {
     static {
         Arrays.fill(MASKS, (byte)0xff);
         ByteBuffer buffer = ByteBuffer.allocate(8);
-        Sequence.base().forEach(0, i->buffer.put((byte)i));
+        Sequence.base30().forEach(Sequence.each(i->buffer.put((byte)i)));
         buffer.flip();
         while(buffer.hasRemaining()) {
             int m = 1 << buffer.position();
@@ -27,27 +27,55 @@ public class Sieve {
         }
     }
 
-    static final Sequence ODDS = (skip, until) -> {
-        Sequence base = Sequence.base();
+    public static long product(long a, long b) {
+
+        long m = Math.abs(a);
+        m |= Math.abs(b);
+        if(m>>>31==0)
+            return a*b;
+
+        if((a^b)<0)
+            return Long.MIN_VALUE;
+        else
+            return Long.MAX_VALUE;
+    }
+
+    static final Sequence ODDS = (base, skip, until) -> {
+        Sequence base30 = Sequence.base30();
 
         if(skip<5)
             skip = 5;
 
         for(long block = skip/30; block<Long.MAX_VALUE; ++block) {
-            if(base.based(30*block).forEachUntil(skip, until))
+            if(base30.forEach(30*block, skip, until))
                 return true;
         }
 
         return false;
     };
 
+    static void testPrime(long prime) {
+        ODDS.forEach(5, n -> {
+            if (n>prime/n)
+                return true;
+
+            if ((prime % n) != 0)
+                return false;
+
+            throw new IllegalStateException("not a prime: " + prime);
+        });
+    }
+
     long base = 0;
     final byte[] bytes;
     final ByteBuffer buffer;
 
-    Sieve(int size) {
-        bytes = new byte[size];
-        buffer = ByteBuffer.wrap(bytes);
+    final PrimeFile primes;
+
+    Sieve(PrimeFile primes, int size) {
+        this.bytes = new byte[size];
+        this.buffer = ByteBuffer.wrap(bytes);
+        this.primes = primes;
     }
 
     int size()  {
@@ -62,50 +90,51 @@ public class Sieve {
         this.base = base;
         buffer.clear();
         Arrays.fill(bytes, (byte)(0xff));
+        long limit = product(base, base);
+        if(limit<limit()) {
+            limit -= base;
+            limit /= 30;
+            buffer.limit((int)limit);
+        }
     }
 
     boolean clear(long index) {
 
         long pos = (index-base)/30;
+        if(pos>=buffer.limit())
+            return true; // abort
 
-        if(pos<buffer.limit()) {
-            int i = (int)((index-base)%30);
-            int mask = MASKS[i];
-            bytes[(int)pos] &= mask;
-            return false;
-        }
+        int i = (int)((index-base)%30);
+        int mask = MASKS[i];
+        bytes[(int)pos] &= mask;
 
-        return true;
+        return false; // continue
     }
 
+    /**
+     * Sieve all products of a prime.
+     * @param prime to clear
+     * @return true if no more hits expected.
+     */
     boolean sieve(long prime) {
-        long skip = Math.max(base / prime, 5);
 
-        if(prime * skip >= limit())
+        if(product(prime, prime)>=limit())
             return true;
 
-        ODDS.forEachUntil(skip, factor -> clear(prime * factor));
+        // further products to clear
+        long skip = Math.max(base / prime, prime-1);
+
+        // for each factor < prime.
+        ODDS.forEach(skip, factor -> clear(prime * factor));
 
         return false;
     }
 
-    void sieve(PrimeFile primes) {
+    void sieve() {
 
         reset(primes.size());
 
-        primes.forEachUntil(5, this::sieve);
-    }
-
-    static void testPrime(long prime) {
-        ODDS.forEachUntil(5, n -> {
-            if (n>prime/n)
-                return false;
-
-            if ((prime % n) != 0)
-                return true;
-
-            throw new IllegalStateException("not a prime: " + prime);
-        });
+        primes.forEach(5, this::sieve);
     }
 
     boolean _sieve(long prime) {
@@ -113,27 +142,26 @@ public class Sieve {
         return sieve(prime);
     }
 
-    public ByteBuffer finish() {
+    public void finish() {
 
         // find all primes on buffer
-        Sequence.compact(buffer).based(base).forEachUntil(this::sieve);
+        Sequence.compact(buffer).forEach(base, 0, this::sieve);
 
-        return buffer;
+        primes.write(buffer);
     }
 
     public static void main(String ... args) throws IOException {
         File file = new File(args.length > 0 ? args[0] : "primes.dat");
 
         try(PrimeFile primes = new PrimeFile(BufferedFile.create(file.toPath()))) {
-            Sieve sieve = new Sieve(1024);
+            Sieve sieve = new Sieve(primes, 1<<20);
 
-            for(int i=0; i<1<<12; ++i) {
-                sieve.sieve(primes);
-                final ByteBuffer buffer = sieve.finish();
-                primes.write(buffer);
+            for(int i=0; i<100; ++i) {
+                sieve.sieve();
+                sieve.finish();
             }
 
-            primes.forEach(primes.size()-50, System.out::println);
+            primes.forEach(primes.size()-50, Sequence.each(System.out::println));
         }
     }
 }

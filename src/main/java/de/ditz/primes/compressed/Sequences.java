@@ -32,9 +32,10 @@ interface Sequences {
     }
 
     static Sequence sequence(byte[] seq) {
-        return (skip, until) -> {
+        return (base, skip, until) -> {
             for (byte b : seq) {
-                if (b > skip && until.test(0xff & b))
+                long n = base + (0xff&b);
+                if (n>skip && until.test(n))
                     return true;
             }
             return false;

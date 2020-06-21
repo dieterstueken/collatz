@@ -72,9 +72,13 @@ public class BufferedFile extends AbstractList<ByteBuffer> implements RandomAcce
         throw new IndexOutOfBoundsException("index:" + index);
     }
 
-    public void write(ByteBuffer buffer) throws IOException {
-        channel.write(buffer);
-        length = channel.size();
+    public void write(ByteBuffer buffer) {
+        try {
+            channel.write(buffer);
+            length = channel.size();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     public static BufferedFile open(Path path) throws IOException {
