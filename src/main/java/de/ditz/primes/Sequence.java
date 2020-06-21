@@ -26,7 +26,9 @@ public interface Sequence {
     }
 
     default Sequence based(long base) {
-        return (b, s, u) -> forEach(base+b, s, p->u.test(base+p));
+        if(base<0)
+            throw new IllegalArgumentException("negative base");
+        return (b, s, u) -> forEach(b, s, p->u.test(base+p));
     }
 
     default Sequence skipped(long skip) {

@@ -125,7 +125,7 @@ public class PrimeFile implements Sequence, AutoCloseable {
                 sequences.add(null);
 
             ByteBuffer buffer = file.get(index);
-            sequence = Sequence.compact(buffer).based(30*index*file.bytes());
+            sequence = Sequence.compact(buffer).based(30L*index*file.bytes());
             sequences.set(index, sequence);
         }
 
