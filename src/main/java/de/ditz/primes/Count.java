@@ -23,7 +23,7 @@ public class Count implements LongPredicate {
 
         if(prime>limit) {
             System.out.format("%,23d %2d %,20d %5.1f\n",
-                    limit, this.prime[j-1], count, (double)limit/count);
+                    limit, this.prime[j-1], count, (double)limit*8/count/30);
 
             if(j>=this.prime.length)
                 return true;
