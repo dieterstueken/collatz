@@ -10,34 +10,39 @@ import java.util.function.LongPredicate;
  * Date: 21.06.20
  * Time: 20:13
  */
-public class Gaps implements LongPredicate {
+public class Count implements LongPredicate {
 
-    long len = 0;
-    long prev = 1;
+    long[] prime = {1, 7, 11, 13, 17, 19, 23, 29, 31};
+
+    int j=1;
+    long limit = 30;
+    long count = 0;
 
     @Override
     public boolean test(long prime) {
-        if(prime<0)
-            throw new IllegalArgumentException();
-        
-        long g =  prime - prev;
-        if(g>len) {
-            System.out.format("%3d %,16d\n", g, prev);
-            len = g;
+
+        if(prime>limit) {
+            System.out.format("%,23d %2d %,20d %5.1f\n",
+                    limit, this.prime[j-1], count, (double)limit/count);
+
+            if(j>=this.prime.length)
+                return true;
+
+            limit *= this.prime[j++];
         }
 
-        prev = prime;
+        ++count;
         return false;
     }
 
     public static void main(String ... args) throws IOException {
         File file = new File(args.length > 0 ? args[0] : "primes.dat");
 
-        Gaps gaps = new Gaps();
-        
+
         try(PrimeFile primes = new PrimeFile(BufferedFile.open(file.toPath()))) {
             System.out.format("total: %,16d\n", primes.size());
-            primes.forEach(gaps);
+            Count count = new Count();
+            primes.forEach(5, count);
         }
     }
 }

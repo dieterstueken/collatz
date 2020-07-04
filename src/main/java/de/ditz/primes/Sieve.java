@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.LinkedList;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RecursiveAction;
 import java.util.function.LongPredicate;
 
@@ -119,7 +120,8 @@ public class Sieve extends RecursiveAction {
 
         int i = (int)((index-base)%30);
         int mask = MASKS[i];
-        bytes[(int)pos] &= mask;
+        if((bytes[(int)pos]&mask)!=0)
+            bytes[(int)pos] &= mask;
 
         return false; // continue
     }
@@ -184,7 +186,8 @@ public class Sieve extends RecursiveAction {
 
                 bytes += len;
 
-                sieve.fork();
+                //sieve.fork();
+                ForkJoinPool.commonPool().submit(sieve);
                 sieves.add(sieve);
                 sieve = null;
             }
