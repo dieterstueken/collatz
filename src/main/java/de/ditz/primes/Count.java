@@ -39,7 +39,7 @@ public class Count implements LongPredicate {
         File file = new File(args.length > 0 ? args[0] : "primes.dat");
 
 
-        try(PrimeFile primes = new PrimeFile(BufferedFile.open(file.toPath()))) {
+        try(PrimeFile primes = PrimeFile.open(file)) {
             System.out.format("total: %,16d\n", primes.size());
             Count count = new Count();
             primes.forEach(5, count);

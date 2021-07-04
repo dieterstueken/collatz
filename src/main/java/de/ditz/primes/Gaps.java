@@ -35,7 +35,7 @@ public class Gaps implements LongPredicate {
 
         Gaps gaps = new Gaps();
         
-        try(PrimeFile primes = new PrimeFile(BufferedFile.open(file.toPath()))) {
+        try(PrimeFile primes = PrimeFile.open(file)) {
             System.out.format("total: %,16d\n", primes.size());
             primes.forEach(gaps);
         }

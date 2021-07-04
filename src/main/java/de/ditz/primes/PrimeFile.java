@@ -148,7 +148,7 @@ public class PrimeFile implements Sequence, AutoCloseable {
     public static void main(String ... args) throws IOException {
         File file = new File(args.length > 0 ? args[0] : "primes.dat");
 
-        try(PrimeFile primes = new PrimeFile(BufferedFile.create(file.toPath()))) {
+        try(PrimeFile primes = PrimeFile.create(file)) {
             primes.forEach(Sequence.each(System.out::println));
         }
 
