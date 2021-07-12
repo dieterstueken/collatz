@@ -30,6 +30,9 @@ abstract class Scale {
     }
 
     int pix(double value) {
+        if(Double.isNaN(value))
+            return 0;
+
         double pix = (value - origin) / scale;
         pix = Math.max(pix, Short.MIN_VALUE);
         pix = Math.min(pix, Short.MAX_VALUE);

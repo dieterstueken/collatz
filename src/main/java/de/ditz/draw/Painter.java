@@ -12,14 +12,27 @@ import java.util.function.DoubleUnaryOperator;
  */
 public class Painter extends JPanel {
 
+    DefaultBoundedRangeModel maxModel = new DefaultBoundedRangeModel(5, 0, 0, 500);
+
     Painter() {
         setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
-        setBorder(BorderFactory.createEmptyBorder(5,25,25,5));
         setPreferredSize(new Dimension(300, 150));
+        setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
 
-        DoubleUnaryOperator function = x -> Math.sin(x);
+        Diagram digram = new Diagram(this::f);
+        add(digram);
 
-        add(new Diagram(function), BorderLayout.CENTER);
+        maxModel.addChangeListener(e -> digram.repaint());
+        JSlider maxSlider = new JSlider(maxModel);
+
+        maxSlider.setMajorTickSpacing(100);
+        maxSlider.setMinorTickSpacing(10);
+        maxSlider.setPaintTicks(true);
+        maxSlider.setPaintLabels(true);
+
+        maxSlider.setBorder(
+                        BorderFactory.createEmptyBorder(15,0,0,0));
+        add(maxSlider);
     }
 
     void open() {
@@ -31,10 +44,26 @@ public class Painter extends JPanel {
         frame.pack();
         frame.setVisible(true);
     }
-    
-    
+
+    double fn(int n, double x) {
+        x /= n;
+        x -= 1;
+        x *= Math.PI;
+        return Math.sin(x)/Math.atan(x);
+    }
+
+    double f(double x) {
+
+        double f = 1;
+        int max = maxModel.getValue();
+        for(int i=2; i<max; ++i)
+            f *= fn(i, x);
+
+        return f;
+    }
+
     public static void main(String ... args) {
-     
+
         final Painter painter = new Painter();
         
         SwingUtilities.invokeLater(painter::open);
