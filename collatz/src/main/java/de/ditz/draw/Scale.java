@@ -1,6 +1,7 @@
 package de.ditz.draw;
 
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Graphics;
 import java.util.function.DoubleConsumer;
 import java.util.function.IntSupplier;
 

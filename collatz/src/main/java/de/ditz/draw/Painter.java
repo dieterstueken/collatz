@@ -1,8 +1,13 @@
 package de.ditz.draw;
 
-import javax.swing.*;
-import java.awt.*;
-import java.util.function.DoubleUnaryOperator;
+import javax.swing.BorderFactory;
+import javax.swing.BoxLayout;
+import javax.swing.DefaultBoundedRangeModel;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.JSlider;
+import javax.swing.SwingUtilities;
+import java.awt.Dimension;
 
 /**
  * Created by IntelliJ IDEA.

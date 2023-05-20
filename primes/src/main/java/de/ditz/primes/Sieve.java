@@ -213,7 +213,7 @@ public class Sieve extends RecursiveAction {
         long start = System.currentTimeMillis();
 
         try(PrimeFile primes = PrimeFile.append(file);
-            Until until = new Until(30L<<34)) {
+            Until until = new Until(2L<<34)) {
 
             try {
                 Sieve.sieve(primes, until);
