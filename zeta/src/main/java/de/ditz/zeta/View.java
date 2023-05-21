@@ -1,55 +1,120 @@
 package de.ditz.zeta;
 
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
 import java.awt.image.BufferedImage;
 
-import static java.awt.image.BufferedImage.TYPE_INT_RGB;
+import static javax.swing.SwingUtilities.invokeLater;
 
 public class View extends JPanel {
 
     ImageSource source;
 
-    BufferedImage image;
+    double x0=0;
+    double y0=0;
+    double scale;
 
-    double x=0;
-    double y=0;
-    double scale = 0;
+    int xoff = 0;
+    int yoff = 0;
+
+    ImageGenerator generator;
     
-    public View(int width, int  height, ImageSource source) {
-        //setSize(width, height);
+    public View(ImageSource source, double scale) {
         this.source = source;
-        JLabel label = new JLabel();
-        label.setSize(width, height);
-        add(label);
+        this.scale = scale;
+
+        addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                updateLater();
+            }
+        });
+
+        MS ms = new MS();
+        addMouseListener(ms);
+        addMouseWheelListener(ms);
+        addMouseMotionListener(ms);
     }
 
-    public void update() {
-        ImageSource source = this.source;
-        if(source==null)
-            return;
+    class MS extends MouseAdapter {
 
-        int height = getHeight();
-        int width = getWidth();
-        BufferedImage image = this.image;
+        Point dragStart = null;
 
-        if((image==null || image.getHeight()!=height || image.getWidth()!=width)) {
-            image = new BufferedImage(width, height, TYPE_INT_RGB);
+        public void mouseDragged(MouseEvent e) {
+             if(dragStart==null)
+                 dragStart = e.getPoint();
+             else {
+                 xoff = e.getX() - dragStart.x;
+                 yoff = e.getY() - dragStart.y;
+                 repaint();
+             }
         }
 
-        for (int iy = 0; iy < width; ++iy) {
-            for (int ix = 0; ix < width; ++ix) {
-                double x = (2 * ix - width) * scale / 2;
-                double y = (2 * iy - height) * scale / 2;
-                int rgb = source.rgb(x, y);
-                image.setRGB(ix, iy, rgb);
+        public void mouseReleased(MouseEvent e) {
+            if(dragStart!=null) {
+                xoff = e.getX() - dragStart.x;
+                yoff = e.getY() - dragStart.y;
+                x0 += scale*xoff;
+                y0 += scale*yoff;
+                xoff = 0;
+                yoff = 0;
+                dragStart = null;
+                updateLater();
             }
         }
 
-        this.image = image;
-        repaint();
+        @Override
+        public void mouseWheelMoved(MouseWheelEvent e) {
+            if (dragStart != null)
+                return;
+
+            double rotation = e.getPreciseWheelRotation();
+            if (rotation == 0)
+                return;
+
+            double zoom = Math.pow(1.25, rotation);
+
+            scale *= zoom;
+            // todo  center at mouse position
+            updateLater();
+        }
+    }
+
+    void stopGenerator() {
+        ImageGenerator generator = this.generator;
+        if(generator!=null) {
+            this.generator = null;
+            generator.interrupt();
+        }
+    }
+
+    void updateLater() {
+        stopGenerator();
+        invokeLater(this::update);
+    }
+
+    void update() {
+        int width = getWidth();
+        int height = getHeight();
+
+        if(source!=null && width!=0 && height!=0) {
+            if(generator==null || generator.getWidth()!=width || generator.getHeight() != height) {
+                stopGenerator();
+
+                Image newImage = createImage(width, height);
+                if (newImage instanceof BufferedImage) {
+                    generator = new ImageGenerator(this, (BufferedImage) newImage);
+                    generator.start();
+                }
+            }
+        }
+    }
+
+    int rgb(int ix, int iy) {
+        double x = scale * (2 * ix - getWidth()) / 2;
+        double y = scale * (2 * iy - getHeight()) / 2;
+        return source.rgb(x-x0, y-y0);
     }
 
     @Override
@@ -59,8 +124,8 @@ public class View extends JPanel {
     }
 
     protected void paintImage(Graphics2D g) {
-        if(image!=null) {
-            g.drawImage(image, 0, 0, this);
-        }
+        ImageGenerator generator = this.generator;
+        if(generator!=null)
+            g.drawImage(generator.image, xoff, yoff, null);
     }
 }
