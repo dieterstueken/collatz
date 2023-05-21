@@ -3,12 +3,9 @@ package de.ditz.zeta
 import org.kotlinmath.Complex
 import org.kotlinmath.complex
 import java.awt.Color
-import java.awt.FlowLayout
 import java.awt.image.BufferedImage
 import java.awt.image.BufferedImage.TYPE_INT_RGB
-import javax.swing.ImageIcon
 import javax.swing.JFrame
-import javax.swing.JLabel
 import javax.swing.WindowConstants
 import kotlin.system.measureTimeMillis
 
@@ -56,9 +53,20 @@ fun main() {
     }
     println("Calculation time: $time")
     with (JFrame()) {
-        contentPane.layout = FlowLayout()
-        contentPane.add(JLabel(ImageIcon(bufferedImage)))
-        setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+
+        val source = object : ImageSource {
+            override fun rgb(x: Double, y: Double): Int {
+                val gray = max - mandelbrot(complex(x, y), 255)
+                return 0x01010100 * (gray%256) + 0xff
+            }
+        };
+
+        val view = View(512, 512, source)
+
+        contentPane.setSize(512, 512);
+        //contentPane.layout = FlowLayout()
+        contentPane.add(view)
+        setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE)
         pack()
         isVisible = true
     }
