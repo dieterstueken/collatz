@@ -55,8 +55,8 @@ public class View extends JPanel {
             if(dragStart!=null) {
                 xoff = e.getX() - dragStart.x;
                 yoff = e.getY() - dragStart.y;
-                x0 += scale*xoff;
-                y0 += scale*yoff;
+                x0 -= scale*xoff;
+                y0 -= scale*yoff;
                 xoff = 0;
                 yoff = 0;
                 dragStart = null;
@@ -75,8 +75,14 @@ public class View extends JPanel {
 
             double zoom = Math.pow(1.25, rotation);
 
+            double dx = e.getX()-0.5*getWidth();
+            double dy = e.getY()-0.5*getHeight();
+            double ds = scale * (1-zoom);
+
+            x0 += ds * dx;
+            y0 += ds * dy ;
             scale *= zoom;
-            // todo  center at mouse position
+
             updateLater();
         }
     }
@@ -114,7 +120,7 @@ public class View extends JPanel {
     int rgb(int ix, int iy) {
         double x = scale * (2 * ix - getWidth()) / 2;
         double y = scale * (2 * iy - getHeight()) / 2;
-        return source.rgb(x-x0, y-y0);
+        return source.rgb(x+x0, -y-y0);
     }
 
     @Override
