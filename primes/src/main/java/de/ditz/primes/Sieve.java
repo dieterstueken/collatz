@@ -165,6 +165,8 @@ public class Sieve extends RecursiveAction {
     public static void sieve(PrimeFile primes, LongPredicate until) {
         final int BYTES = 1<<20;
 
+        double last = 1;
+
         long bytes = primes.bytes();
 
         final LinkedList<Sieve> sieves = new LinkedList<>();
@@ -202,6 +204,13 @@ public class Sieve extends RecursiveAction {
 
             sieve.join();
             sieve.finish();
+
+            long size = 30*primes.bytes();
+            double p2 = Math.floor(Math.log(size)/Math.log(2));
+            if(p2>last) {
+                System.out.format("%2.1f %,40d\n", p2, size);
+                last = p2;
+            }
         }
     }
 
@@ -213,7 +222,7 @@ public class Sieve extends RecursiveAction {
         long start = System.currentTimeMillis();
 
         try(PrimeFile primes = PrimeFile.append(file);
-            Until until = new Until(2L<<34)) {
+            Until until = new Until(2L<<38)) {
 
             try {
                 Sieve.sieve(primes, until);
