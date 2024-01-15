@@ -2,7 +2,6 @@ package de.ditz.primes;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.function.LongPredicate;
 
 /**
  * Created by IntelliJ IDEA.
@@ -10,13 +9,12 @@ import java.util.function.LongPredicate;
  * Date: 21.06.20
  * Time: 20:13
  */
-public class Gaps implements LongPredicate {
+public class Gaps {
 
     long len = 0;
     long prev = 1;
 
-    @Override
-    public boolean test(long prime) {
+    public Void run(long prime) {
         if(prime<0)
             throw new IllegalArgumentException();
         
@@ -27,7 +25,7 @@ public class Gaps implements LongPredicate {
         }
 
         prev = prime;
-        return false;
+        return null;
     }
 
     public static void main(String ... args) throws IOException {
@@ -37,7 +35,7 @@ public class Gaps implements LongPredicate {
         
         try(PrimeFile primes = PrimeFile.open(file)) {
             System.out.format("total: %,16d\n", primes.size());
-            primes.forEach(gaps);
+            primes.forEach(gaps::run);
         }
     }
 }

@@ -1,8 +1,8 @@
 package de.ditz.primes;
 
-import java.util.*;
+import java.util.List;
 import java.util.function.IntFunction;
-import java.util.function.LongPredicate;
+import java.util.function.LongFunction;
 import java.util.stream.IntStream;
 
 /**
@@ -51,40 +51,41 @@ public class CompactSequence implements Sequence {
         return Integer.bitCount(mask());
     }
 
-    @Override
-    public boolean forEach(long start, LongPredicate until, long offset) {
-
-        // fast track
-        if(start <= offset)
-            return forEach(until, offset);
-
-        // sequence is skipped completely
-        if(start >= offset+30)
-            return false;
-
-        // partial processing (infrequent).
-        return forEach(Sequence.start(until, start), offset);
+    public static long count(long size) {
+        return size<0 ? 0 : size/SIZE;
     }
 
     @Override
-    public boolean forEach(LongPredicate until, long offset) {
+    public <R> R forEach(long start, LongFunction<? extends R> process, long offset) {
+
+        // fast track
+        if(start <= offset)
+            return forEach(process, offset);
+
+        // sequence is skipped completely
+        if(start >= offset+30)
+            return null;
+
+        // partial processing (infrequent).
+        return forEach(Sequence.start(process, start), offset);
+    }
+
+    @Override
+    public <R> R forEach(LongFunction<? extends R> process, long offset) {
+
+        R result = null;
 
         // virtual 1
         if((sequence&1)!=0) {
-            if(until.test(offset+1))
-                return true;
+            result = process.apply(offset+1);
         }
 
         // drop mask
-        long values = sequence>>8;
-        while(values!=0) {
-            if(until.test(offset + (values & 0xff)))
-                return true;
-
-            values >>= 8;
+        for(long values = sequence>>8; result==null && values!=0; values >>= 8) {
+            result = process.apply(offset + (values & 0xff));
         }
 
-        return false;
+        return result;
     }
 
     public CompactSequence drop(long factor) {

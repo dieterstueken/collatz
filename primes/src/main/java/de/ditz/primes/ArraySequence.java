@@ -1,6 +1,6 @@
 package de.ditz.primes;
 
-import java.util.function.LongPredicate;
+import java.util.function.LongFunction;
 
 public class ArraySequence implements Sequence {
 
@@ -11,29 +11,29 @@ public class ArraySequence implements Sequence {
    }
 
    @Override
-   public boolean forEach(long start, LongPredicate until, long offset) {
+   public <R> R  forEach(long start, LongFunction<? extends R> process, long offset) {
 
       // fast track
       if(start <values[0])
-         return forEach(until, offset);
+         return forEach(process, offset);
 
       // sequence is skipped completely
       if(start >=offset+values[values.length-1])
-         return false;
+         return null;
 
       // partial processing (infrequent).
-      return forEachAt(0, Sequence.start(until, start), offset);
+      return forEachAt(0, Sequence.start(process, start), offset);
    }
 
-   public boolean forEachAt(int start, LongPredicate until, long offset) {
+   public <R> R forEachAt(int start, LongFunction<? extends R> process, long offset) {
+      R result = null;
 
-      for(int i=start; i<values.length; ++i) {
+      for(int i=start; i<values.length && result==null; ++i) {
          int prime = values[i];
-         if (until.test(prime + offset))
-            return true;
+         result = process.apply(prime + offset);
       }
 
-      return false;
+      return result;
    }
 
    public static final ArraySequence ROOT;
@@ -55,20 +55,20 @@ public class ArraySequence implements Sequence {
             return "ROOT(2, 3, 5, 7, 11, 13, 17, 19, 23, 29)";
          }
          @Override
-         public boolean forEach(long start, LongPredicate until, long offset) {
+         public <R> R forEach(long start, LongFunction<? extends R> process, long offset) {
 
             long i = start - offset;
 
             // fast track
             if(i<2)
-               return forEachAt(0, until, offset);
+               return forEachAt(0, process, offset);
 
             // skip values
             if(i<30)
-               return forEachAt(offsets[(int)i], until, offset);
+               return forEachAt(offsets[(int)i], process, offset);
 
-            // sequence is skipped completely
-            return false;
+            // this sequence is skipped completely
+            return null;
          }
       };
    }

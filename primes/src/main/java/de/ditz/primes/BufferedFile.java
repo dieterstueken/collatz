@@ -6,7 +6,10 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.*;
+import java.util.AbstractList;
+import java.util.EnumSet;
+import java.util.RandomAccess;
+import java.util.Set;
 
 /**
  * Created by IntelliJ IDEA.
@@ -16,14 +19,14 @@ import java.util.*;
  */
 public class BufferedFile extends AbstractList<ByteBuffer> implements RandomAccess, AutoCloseable {
 
-    final int bytes;
+    final int block;
 
     final FileChannel channel;
 
     protected long length;
 
-    protected BufferedFile(FileChannel channel, int bytes) throws IOException {
-        this.bytes = bytes;
+    protected BufferedFile(FileChannel channel, int block) throws IOException {
+        this.block = block;
         this.channel = channel;
         this.length = channel.size();
     }
@@ -33,8 +36,12 @@ public class BufferedFile extends AbstractList<ByteBuffer> implements RandomAcce
         channel.close();
     }
 
-    int bytes() {
-        return bytes;
+    int blockSize() {
+        return block;
+    }
+
+    long blocks(long size) {
+        return size / block;
     }
 
     public long length() {
@@ -43,14 +50,14 @@ public class BufferedFile extends AbstractList<ByteBuffer> implements RandomAcce
 
     @Override
     public int size() {
-        return (int)((this.length + bytes() - 1) / bytes());
+        return (int)((this.length + blockSize() - 1) / blockSize());
     }
 
     @Override
     public ByteBuffer get(int index) {
         try {
-            long pos = (long) index * bytes();
-            int len = (int) Math.min(length - pos, bytes());
+            long pos = (long) index * blockSize();
+            int len = (int) Math.min(length - pos, blockSize());
             ByteBuffer bytes = channel.map(FileChannel.MapMode.READ_ONLY, pos, len);
             bytes.position(bytes.limit());
             return bytes;

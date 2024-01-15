@@ -2,7 +2,6 @@ package de.ditz.primes;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.function.LongPredicate;
 
 /**
  * Created by IntelliJ IDEA.
@@ -10,7 +9,7 @@ import java.util.function.LongPredicate;
  * Date: 21.06.20
  * Time: 20:13
  */
-public class Count implements LongPredicate {
+public class Count {
 
     long[] prime = {1, 7, 11, 13, 17, 19, 23, 29, 31};
 
@@ -18,21 +17,20 @@ public class Count implements LongPredicate {
     long limit = 30;
     long count = 0;
 
-    @Override
-    public boolean test(long prime) {
+    public Long count(long prime) {
 
         if(prime>limit) {
             System.out.format("%,23d %2d %,20d %5.1f\n",
                     limit, this.prime[j-1], count, (double)limit*8/count/30);
 
             if(j>=this.prime.length)
-                return true;
+                return count;
 
             limit *= this.prime[j++];
         }
 
         ++count;
-        return false;
+        return null;
     }
 
     public static void main(String ... args) throws IOException {
@@ -42,7 +40,7 @@ public class Count implements LongPredicate {
         try(PrimeFile primes = PrimeFile.open(file)) {
             System.out.format("total: %,16d\n", primes.size());
             Count count = new Count();
-            primes.forEach(5, count);
+            primes.forEach(5, count::count);
         }
     }
 }

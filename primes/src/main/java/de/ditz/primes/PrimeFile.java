@@ -3,8 +3,11 @@ package de.ditz.primes;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.*;
-import java.util.function.LongPredicate;
+import java.util.AbstractList;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.RandomAccess;
+import java.util.function.LongFunction;
 
 /**
  * version:     $
@@ -15,16 +18,22 @@ import java.util.function.LongPredicate;
  */
 public class PrimeFile extends AbstractList<BufferedSequence> implements Sequence, RandomAccess, AutoCloseable {
 
+    /**
+     * Block size in bytes.
+     * A single byte of compacted primes represents 2*3*5=30 numbers.
+     */
+    public static final int BLOCK = 7*11*13*17;
+
     public static PrimeFile create(File file) throws IOException {
-        return new PrimeFile(BufferedFile.create(file.toPath(), Sieve.BLOCK));
+        return new PrimeFile(BufferedFile.create(file.toPath(), BLOCK));
     }
 
     public static PrimeFile append(File file) throws IOException {
-        return new PrimeFile(BufferedFile.append(file.toPath(), Sieve.BLOCK));
+        return new PrimeFile(BufferedFile.append(file.toPath(), BLOCK));
     }
 
     public static PrimeFile open(File file) throws IOException {
-        return new PrimeFile(BufferedFile.open(file.toPath(), Sieve.BLOCK));
+        return new PrimeFile(BufferedFile.open(file.toPath(), BLOCK));
     }
 
     final BufferedFile file;
@@ -51,7 +60,7 @@ public class PrimeFile extends AbstractList<BufferedSequence> implements Sequenc
 
             for(int k=sequences.size(); k<=i; ++k) {
                 sequence = new BufferedSequence(file.get(k));
-                if(sequence.buffer.capacity()==file.bytes())
+                if(sequence.buffer.capacity()==file.blockSize())
                     sequences.add(sequence);
             }
 
@@ -65,28 +74,35 @@ public class PrimeFile extends AbstractList<BufferedSequence> implements Sequenc
         file.close();
     }
 
+    long blocks(long start) {
+        return file.blocks(CompactSequence.count(start));
+    }
+
     /**
      * @param start
-     * @param until condition to top
+     * @param process condition to top
      * @return true if stopped by condition
      */
     @Override
-    public boolean forEach(long start, LongPredicate until, long offset) {
+    public <R> R forEach(long start, LongFunction<? extends R> process, long offset) {
 
         // substitute first compact sequence since it does not contain any primes < 17.
-        if(ArraySequence.ROOT.forEach(start, until, offset))
-            return true;
+        R result = ArraySequence.ROOT.forEach(start, process, offset);
 
-        if(start <30) // skip since root sequence already done
-            start = 30;
+        if(result==null) {
 
-        for (BufferedSequence sequence : this) {
-            if(sequence.forEach(start, until, offset))
-                return true;
-            offset += sequence.size();
+            if (start < 30) // skip, since root sequence already done
+                start = 30;
+
+            // possibly skip some blocks
+            for (int i = (int)blocks(start); result==null && i < this.size(); i++) {
+                BufferedSequence sequence = this.get(i);
+                result = sequence.forEach(start, process, offset);
+                offset += sequence.size();
+            }
         }
 
-        return false;
+        return result;
     }
 
     public void write(BufferedSequence sequence) {
@@ -96,7 +112,7 @@ public class PrimeFile extends AbstractList<BufferedSequence> implements Sequenc
     public void write(ByteBuffer buffer) {
 
         int size = sequences.size();
-        long count = file.length / file.bytes();
+        long count = file.length / file.blockSize();
 
         // truncate after last complete buffer
         if(size>count) {

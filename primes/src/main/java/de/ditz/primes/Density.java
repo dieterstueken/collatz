@@ -2,7 +2,6 @@ package de.ditz.primes;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.function.LongPredicate;
 
 /**
  * Created by IntelliJ IDEA.
@@ -10,15 +9,14 @@ import java.util.function.LongPredicate;
  * Date: 21.06.20
  * Time: 20:13
  */
-public class Density implements LongPredicate {
+public class Density {
 
     static final long BLOCK = 10000000000L;
 
     long count = 0;
     long block = 1;
 
-    @Override
-    public boolean test(long prime) {
+    public Void count(long prime) {
         if(prime<0)
             throw new IllegalArgumentException();
         
@@ -29,7 +27,7 @@ public class Density implements LongPredicate {
         }
 
         ++count;
-        return false;
+        return null;
     }
 
     public static void main(String ... args) throws IOException {
@@ -39,7 +37,7 @@ public class Density implements LongPredicate {
         
         try(PrimeFile primes = PrimeFile.open(file)) {
             System.out.format("total: %,16d\n", primes.size());
-            primes.forEach(density);
+            primes.forEach(density::count);
         }
     }
 }

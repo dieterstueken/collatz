@@ -1,7 +1,7 @@
 package de.ditz.primes;
 
 import java.nio.ByteBuffer;
-import java.util.function.LongPredicate;
+import java.util.function.LongFunction;
 
 /**
  * Created by IntelliJ IDEA.
@@ -30,18 +30,16 @@ public class BufferedSequence implements Sequence {
     }
 
     @Override
-    public boolean forEach(long start, LongPredicate until, long base) {
+    public <R> R forEach(long start, LongFunction<? extends R> process, long base) {
 
-        int i = start <base ? 0 : (int)((base - start)/CompactSequence.SIZE);
+        R result = null;
 
-        while(i<buffer.capacity()) {
-            byte m = buffer.get(i);
+        for(long i = CompactSequence.count(base - start); result==null && i<buffer.capacity(); ++i) {
+            byte m = buffer.get((int)i);
             CompactSequence s = CompactSequence.sequence(m);
-            if(s.forEach(start, until, base+(long)CompactSequence.SIZE*i))
-                return true;
-            ++i;
+            result = s.forEach(start, process, base+(long)CompactSequence.SIZE*i);
         }
 
-        return false;
+        return result;
     }
 }

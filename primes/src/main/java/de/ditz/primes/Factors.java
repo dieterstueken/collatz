@@ -2,7 +2,6 @@ package de.ditz.primes;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.function.LongPredicate;
 
 /**
  * Created by IntelliJ IDEA.
@@ -10,7 +9,7 @@ import java.util.function.LongPredicate;
  * Date: 21.06.20
  * Time: 20:13
  */
-public class Factors implements LongPredicate {
+public class Factors {
 
     long base;
 
@@ -20,8 +19,7 @@ public class Factors implements LongPredicate {
         this.base = base;
     }
 
-    @Override
-    public boolean test(long prime) {
+    public Integer count(long prime) {
         if((base%prime) == 0) {
             ++count;
             do {
@@ -29,12 +27,7 @@ public class Factors implements LongPredicate {
             } while((base%prime) == 0);
         }
 
-        return base/prime < prime;
-    }
-
-    public int count(Sequence primes) {
-        primes.forEach(this);
-        return count;
+        return base/prime < prime ? count : null;
     }
 
     public static void main(String ... args) throws IOException {
@@ -46,7 +39,7 @@ public class Factors implements LongPredicate {
                     System.out.format("\n%5d:", l);
 
                 Factors factors = new Factors(l);
-                int count = factors.count(primes);
+                int count = primes.forEach(factors::count);
                 System.out.format("%2d", count);
             }
             System.out.println();

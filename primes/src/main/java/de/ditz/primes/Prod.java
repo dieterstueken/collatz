@@ -21,7 +21,7 @@ public class Prod {
 
     double sum = 0;
 
-    public boolean process(long prime) {
+    public Void process(long prime) {
         last = prime;
 
         if((prime>>j)>0) {
@@ -32,7 +32,7 @@ public class Prod {
         ++count;
         sum += log2(prime);
 
-        return false;
+        return null;
     }
 
     static double log2(double v) {
