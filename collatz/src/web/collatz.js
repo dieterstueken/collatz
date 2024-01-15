@@ -120,7 +120,7 @@ function Tree() {
         }
 
         this.toString = function() {
-            return this.n.toString().concat('(').concat(this.len).concat(':').concat(this.path).concat(')');
+            return this.n.toString().concat('(').concat(this.sum).concat(':').concat(this.path).concat(')');
         }
     }
 
