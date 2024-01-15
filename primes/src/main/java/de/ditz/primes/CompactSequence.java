@@ -1,6 +1,6 @@
 package de.ditz.primes;
 
-import java.util.List;
+import java.util.*;
 import java.util.function.IntFunction;
 import java.util.function.LongPredicate;
 import java.util.stream.IntStream;
@@ -23,7 +23,7 @@ import java.util.stream.IntStream;
  *
  * All 256 instances of a CompactSequence are cached in a precalculated List.
  */
-public class CompactSequence {
+public class CompactSequence implements Sequence {
 
     public static int SIZE = 2*3*5;
 
@@ -47,10 +47,26 @@ public class CompactSequence {
         return (byte)((sequence << 8*i)&0xff);
     }
 
-    public int size() {
+    public int count() {
         return Integer.bitCount(mask());
     }
 
+    @Override
+    public boolean forEach(long start, LongPredicate until, long offset) {
+
+        // fast track
+        if(start <= offset)
+            return forEach(until, offset);
+
+        // sequence is skipped completely
+        if(start >= offset+30)
+            return false;
+
+        // partial processing (infrequent).
+        return forEach(Sequence.start(until, start), offset);
+    }
+
+    @Override
     public boolean forEach(LongPredicate until, long offset) {
 
         // virtual 1
@@ -62,13 +78,24 @@ public class CompactSequence {
         // drop mask
         long values = sequence>>8;
         while(values!=0) {
-            long value = values & 0xff;
-            if(until.test(offset+value))
+            if(until.test(offset + (values & 0xff)))
                 return true;
+
             values >>= 8;
         }
 
         return false;
+    }
+
+    public CompactSequence drop(long factor) {
+        if(factor>0 && factor<30)
+            return clear((int)factor);
+        else
+            return this;
+    }
+
+    public CompactSequence clear(int factor) {
+        return sequence(mask(mask(), factor));
     }
 
     static final List<CompactSequence> SEQUENCES ;
@@ -86,6 +113,10 @@ public class CompactSequence {
      * @return index of the reduced sequence.
      */
     public static byte mask(byte index, int factor) {
+
+        if(factor<=0 || factor>=30)
+            return index;
+
         byte m = MASKS[factor];
         return (byte)(index & ~m);
     }

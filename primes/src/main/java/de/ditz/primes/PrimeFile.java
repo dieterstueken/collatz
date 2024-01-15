@@ -3,10 +3,7 @@ package de.ditz.primes;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.AbstractList;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.RandomAccess;
+import java.util.*;
 import java.util.function.LongPredicate;
 
 /**
@@ -16,18 +13,18 @@ import java.util.function.LongPredicate;
  * modified by: $
  * modified on: $
  */
-public class PrimeFile extends AbstractList<BufferedSequence> implements RandomAccess, AutoCloseable {
+public class PrimeFile extends AbstractList<BufferedSequence> implements Sequence, RandomAccess, AutoCloseable {
 
     public static PrimeFile create(File file) throws IOException {
-        return new PrimeFile(BufferedFile.create(file.toPath()));
+        return new PrimeFile(BufferedFile.create(file.toPath(), Sieve.BLOCK));
     }
 
     public static PrimeFile append(File file) throws IOException {
-        return new PrimeFile(BufferedFile.append(file.toPath()));
+        return new PrimeFile(BufferedFile.append(file.toPath(), Sieve.BLOCK));
     }
 
     public static PrimeFile open(File file) throws IOException {
-        return new PrimeFile(BufferedFile.open(file.toPath()));
+        return new PrimeFile(BufferedFile.open(file.toPath(), Sieve.BLOCK));
     }
 
     final BufferedFile file;
@@ -36,10 +33,6 @@ public class PrimeFile extends AbstractList<BufferedSequence> implements RandomA
 
     public PrimeFile(BufferedFile file) {
         this.file = file;
-
-        if(file.length()==0) {
-            write(BufferedSequence.BASE);
-        }
     }
 
     public int size() {
@@ -73,23 +66,23 @@ public class PrimeFile extends AbstractList<BufferedSequence> implements RandomA
     }
 
     /**
-     *
+     * @param start
      * @param until condition to top
      * @return true if stopped by condition
      */
-    public boolean forEach(LongPredicate until) {
+    @Override
+    public boolean forEach(long start, LongPredicate until, long offset) {
 
-        for (Integer root : BufferedSequence.ROOTS) {
-            if(until.test(root))
-                return true;
-        }
+        // substitute first compact sequence since it does not contain any primes < 17.
+        if(ArraySequence.ROOT.forEach(start, until, offset))
+            return true;
 
-        long offset = 0;
+        if(start <30) // skip since root sequence already done
+            start = 30;
 
         for (BufferedSequence sequence : this) {
-            if(sequence.forEach(until, offset))
+            if(sequence.forEach(start, until, offset))
                 return true;
-
             offset += sequence.size();
         }
 

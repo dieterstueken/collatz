@@ -28,10 +28,6 @@ public class BufferedFile extends AbstractList<ByteBuffer> implements RandomAcce
         this.length = channel.size();
     }
 
-    protected BufferedFile(FileChannel channel) throws IOException {
-        this(channel, 1<<14);
-    }
-
     @Override
     public void close() throws IOException {
         channel.close();
@@ -73,20 +69,20 @@ public class BufferedFile extends AbstractList<ByteBuffer> implements RandomAcce
         }
     }
 
-    public static BufferedFile open(Path path) throws IOException {
+    public static BufferedFile open(Path path, int block) throws IOException {
         FileChannel channel = FileChannel.open(path, StandardOpenOption.READ);
-        return new BufferedFile(channel);
+        return new BufferedFile(channel, block);
     }
 
-    public static BufferedFile create(Path path) throws IOException {
-        return open(path, true);
+    public static BufferedFile create(Path path, int block) throws IOException {
+        return open(path, block,true);
     }
 
-    public static BufferedFile append(Path path) throws IOException {
-        return open(path, false);
+    public static BufferedFile append(Path path, int block) throws IOException {
+        return open(path, block, false);
     }
 
-    public static BufferedFile open(Path path, boolean truncate) throws IOException {
+    public static BufferedFile open(Path path, int block, boolean truncate) throws IOException {
         Set<StandardOpenOption> options = EnumSet.of(StandardOpenOption.CREATE,
                 StandardOpenOption.READ, StandardOpenOption.WRITE);
 
@@ -94,6 +90,6 @@ public class BufferedFile extends AbstractList<ByteBuffer> implements RandomAcce
             options.add(StandardOpenOption.TRUNCATE_EXISTING);
 
         FileChannel channel = FileChannel.open(path, options);
-        return new BufferedFile(channel);
+        return new BufferedFile(channel, block);
     }
 }

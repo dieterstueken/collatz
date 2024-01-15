@@ -33,7 +33,7 @@ public class Factors implements LongPredicate {
     }
 
     public int count(Sequence primes) {
-        primes.forEach(0, 0, this::test);
+        primes.forEach(this);
         return count;
     }
 
