@@ -1,7 +1,6 @@
 package de.ditz.primes;
 
-import java.util.List;
-import java.util.function.IntFunction;
+import java.util.*;
 import java.util.function.LongFunction;
 import java.util.stream.IntStream;
 
@@ -37,18 +36,30 @@ public class CompactSequence implements Sequence {
         return (byte)(sequence&0xff);
     }
 
-    public byte get(int i) {
-        if((sequence&1)!=0) {
-            if(i==0)
-                return 1;
-            --i;
+    /**
+     * Get the factor at index from the sequence.
+     * @param index of the factor to return.
+     * @return the number at index.
+     * @throws IndexOutOfBoundsException - if the index is out of range
+     */
+    public int get(int index) {
+        int factor = 0;
+
+        if (index>1 && index < 7) {
+            factor = (byte) ((sequence >> 8 * (index + 1)) & 0xff);
+        } else if(index == 1 && (sequence&1)!=0) {
+            factor = 1;
         }
 
-        return (byte)((sequence << 8*i)&0xff);
+        if(factor==0)
+            throw new IndexOutOfBoundsException();
+
+        return factor;
     }
 
     public int count() {
-        return Integer.bitCount(mask());
+        final byte mask = mask();
+        return Integer.bitCount(mask&0xff);
     }
 
     public static long count(long size) {
@@ -56,22 +67,22 @@ public class CompactSequence implements Sequence {
     }
 
     @Override
-    public <R> R forEach(long start, LongFunction<? extends R> process, long offset) {
+    public <R> R process(long start, LongFunction<? extends R> process, long offset) {
 
         // fast track
         if(start <= offset)
-            return forEach(process, offset);
+            return process(process, offset);
 
         // sequence is skipped completely
         if(start >= offset+30)
             return null;
 
         // partial processing (infrequent).
-        return forEach(Sequence.start(process, start), offset);
+        return process(Sequence.start(process, start), offset);
     }
 
     @Override
-    public <R> R forEach(LongFunction<? extends R> process, long offset) {
+    public <R> R process(LongFunction<? extends R> process, long offset) {
 
         R result = null;
 
@@ -90,14 +101,16 @@ public class CompactSequence implements Sequence {
 
     public CompactSequence drop(long factor) {
         if(factor>0 && factor<30)
-            return clear((int)factor);
+            return drop((int)factor);
         else
             return this;
     }
 
-    public CompactSequence clear(int factor) {
+    public CompactSequence drop(int factor) {
         return sequence(mask(mask(), factor));
     }
+
+    private static final byte[] MASKS = new byte[30];
 
     static final List<CompactSequence> SEQUENCES ;
 
@@ -105,7 +118,13 @@ public class CompactSequence implements Sequence {
         return SEQUENCES.get(index&0xff);
     }
 
-    private static final byte[] MASKS;
+    static CompactSequence root() {
+        return sequence(255);
+    }
+
+    static CompactSequence empty() {
+        return sequence(0);
+    }
 
     /**
      * Drop a given factor [0,30] from the mask of factors.
@@ -123,26 +142,37 @@ public class CompactSequence implements Sequence {
     }
 
     static {
+
         int[] BASE = {1,7,11,13,17,19,23,29};
 
-        IntFunction<CompactSequence> generate = m -> {
-            long sequence = 0;
-
-           for(int i=0; i<7; ++i) {
-               if((m&(0x80>>i))!=0) {
-                   sequence = 256*sequence + BASE[7-i];
-               }
-           }
-
-           return new CompactSequence(sequence);
-        };
-
-        SEQUENCES = IntStream.range(0, 256).mapToObj(generate).toList();
-
-        MASKS = new byte[30];
+        // setup 8 of the MASK entries with the bit to clear.
         for(int i=0; i<BASE.length; ++i) {
             int p = BASE[i];
             MASKS[p] = (byte)(1<<i);
         }
+
+        // generate 256 sequences 
+        SEQUENCES = IntStream.range(0, 256).mapToObj(m -> {
+            long sequence = 0;
+
+           for(int i=7; i>0; --i) {
+               if(((m>>i)&1) != 0) {
+                   sequence = (sequence<<8) + BASE[i];
+               }
+           }
+
+           sequence = (sequence<<8) | (m&0xff);
+
+           return new CompactSequence(sequence);
+        }).toList();
+    }
+
+    @Override
+    public String toString() {
+        return String.format("CompactSequence(%x)", sequence);
+    }
+
+    public static void main(String ... args) {
+        SEQUENCES.forEach(System.out::println);
     }
 }

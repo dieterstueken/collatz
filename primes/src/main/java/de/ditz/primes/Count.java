@@ -40,7 +40,7 @@ public class Count {
         try(PrimeFile primes = PrimeFile.open(file)) {
             System.out.format("total: %,16d\n", primes.size());
             Count count = new Count();
-            primes.forEach(5, count::count);
+            primes.process(5, count::count);
         }
     }
 }

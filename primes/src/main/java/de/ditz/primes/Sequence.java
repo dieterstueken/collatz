@@ -1,5 +1,6 @@
 package de.ditz.primes;
 
+import java.util.function.LongConsumer;
 import java.util.function.LongFunction;
 
 /**
@@ -17,18 +18,22 @@ public interface Sequence {
      * @param process to generate a result to stop the processing.
      * @return R result if the processor or null if the stream run to its end.
      */
-    <R> R forEach(long start, LongFunction<? extends R> process, long offset);
+    <R> R process(long start, LongFunction<? extends R> process, long offset);
 
-    default <R> R forEach(long start, LongFunction<? extends R> process) {
-        return forEach(start, process, 0);
+    default <R> R process(long start, LongFunction<? extends R> process) {
+        return process(start, process, 0);
     }
 
-    default <R> R forEach(LongFunction<? extends R> process, long offset) {
-        return forEach(0, process, offset);
+    default <R> R process(LongFunction<? extends R> process, long offset) {
+        return process(0, process, offset);
     }
 
-    default <R> R forEach(LongFunction<? extends R> process) {
-        return forEach(0, process, 0);
+    default <R> R process(LongFunction<? extends R> process) {
+        return process(0, process, 0);
+    }
+
+    default void processAll(LongConsumer process) {
+        process(p -> {process.accept(p); return null;});
     }
 
     static <R> LongFunction<R> shift(LongFunction<R> process, long offset) {
@@ -44,7 +49,7 @@ public interface Sequence {
      */
     Sequence EMPTY = new Sequence() {
         @Override
-        public <R> R forEach(long start, LongFunction<? extends R> process, long offset) {
+        public <R> R process(long start, LongFunction<? extends R> process, long offset) {
             return null;
         }
     };

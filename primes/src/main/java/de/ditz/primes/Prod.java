@@ -51,7 +51,7 @@ public class Prod {
     }
 
     void process(PrimeFile primes) {
-        primes.forEach(5, this::process);
+        primes.process(5, this::process);
         show(last);
     }
 

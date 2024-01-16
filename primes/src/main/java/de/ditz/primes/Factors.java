@@ -39,7 +39,7 @@ public class Factors {
                     System.out.format("\n%5d:", l);
 
                 Factors factors = new Factors(l);
-                int count = primes.forEach(factors::count);
+                int count = primes.process(factors::count);
                 System.out.format("%2d", count);
             }
             System.out.println();

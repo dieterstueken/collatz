@@ -3,10 +3,7 @@ package de.ditz.primes;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.AbstractList;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.RandomAccess;
+import java.util.*;
 import java.util.function.LongFunction;
 
 /**
@@ -84,10 +81,10 @@ public class PrimeFile extends AbstractList<BufferedSequence> implements Sequenc
      * @return true if stopped by condition
      */
     @Override
-    public <R> R forEach(long start, LongFunction<? extends R> process, long offset) {
+    public <R> R process(long start, LongFunction<? extends R> process, long offset) {
 
         // substitute first compact sequence since it does not contain any primes < 17.
-        R result = ArraySequence.ROOT.forEach(start, process, offset);
+        R result = ArraySequence.ROOT.process(start, process, offset);
 
         if(result==null) {
 
@@ -97,8 +94,8 @@ public class PrimeFile extends AbstractList<BufferedSequence> implements Sequenc
             // possibly skip some blocks
             for (int i = (int)blocks(start); result==null && i < this.size(); i++) {
                 BufferedSequence sequence = this.get(i);
-                result = sequence.forEach(start, process, offset);
-                offset += sequence.size();
+                result = sequence.process(start, process, offset);
+                offset += sequence.limit();
             }
         }
 

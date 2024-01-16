@@ -11,21 +11,21 @@ public class ArraySequence implements Sequence {
    }
 
    @Override
-   public <R> R  forEach(long start, LongFunction<? extends R> process, long offset) {
+   public <R> R process(long start, LongFunction<? extends R> process, long offset) {
 
       // fast track
       if(start <values[0])
-         return forEach(process, offset);
+         return process(process, offset);
 
       // sequence is skipped completely
       if(start >=offset+values[values.length-1])
          return null;
 
       // partial processing (infrequent).
-      return forEachAt(0, Sequence.start(process, start), offset);
+      return processFrom(0, Sequence.start(process, start), offset);
    }
 
-   public <R> R forEachAt(int start, LongFunction<? extends R> process, long offset) {
+   public <R> R processFrom(int start, LongFunction<? extends R> process, long offset) {
       R result = null;
 
       for(int i=start; i<values.length && result==null; ++i) {
@@ -55,17 +55,17 @@ public class ArraySequence implements Sequence {
             return "ROOT(2, 3, 5, 7, 11, 13, 17, 19, 23, 29)";
          }
          @Override
-         public <R> R forEach(long start, LongFunction<? extends R> process, long offset) {
+         public <R> R process(long start, LongFunction<? extends R> process, long offset) {
 
             long i = start - offset;
 
             // fast track
             if(i<2)
-               return forEachAt(0, process, offset);
+               return processFrom(0, process, offset);
 
             // skip values
             if(i<30)
-               return forEachAt(offsets[(int)i], process, offset);
+               return processFrom(offsets[(int)i], process, offset);
 
             // this sequence is skipped completely
             return null;
@@ -76,7 +76,7 @@ public class ArraySequence implements Sequence {
    public static void main(String ... args) {
       for(int i=0; i<31; ++i) {
          System.out.format("%2d:", i);
-         ROOT.forEach(i, p-> {
+         ROOT.process(i, p-> {
             System.out.format(" %2d", p);
             return false;
          });
