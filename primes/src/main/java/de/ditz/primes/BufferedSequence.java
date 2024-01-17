@@ -41,7 +41,7 @@ public class BufferedSequence extends AbstractList<CompactSequence> implements R
     }
 
     public long count() {
-        return stream().mapToInt(CompactSequence::count).sum();
+        return stream().mapToInt(CompactSequence::size).sum();
     }
 
     @Override
@@ -147,6 +147,6 @@ public class BufferedSequence extends AbstractList<CompactSequence> implements R
 
         System.out.format("%,d %,d\n", sequence.limit(), sequence.count());
 
-        sequence.processAll(System.out::println);
+        sequence.process(Sequence.all(System.out::println));
     }
 }

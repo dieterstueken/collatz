@@ -2,6 +2,7 @@ package de.ditz.primes;
 
 import java.util.function.LongConsumer;
 import java.util.function.LongFunction;
+import java.util.function.LongPredicate;
 
 /**
  * Created by IntelliJ IDEA.
@@ -32,25 +33,19 @@ public interface Sequence {
         return process(0, process, 0);
     }
 
-    default void processAll(LongConsumer process) {
-        process(p -> {process.accept(p); return null;});
+    static LongFunction<Boolean> until(LongPredicate process) {
+        return p -> process.test(p) ? true : null;
+    }
+
+    static LongFunction<Boolean> all(LongConsumer process) {
+        return p -> {process.accept(p); return false;};
     }
 
     static <R> LongFunction<R> shift(LongFunction<R> process, long offset) {
         return offset==0 ? process : p -> process.apply(p+offset);
     }
 
-    static <R> LongFunction<R> start(LongFunction<R> process, long start) {
+    static <R> LongFunction<R> from(LongFunction<R> process, long start) {
         return start<0 ? process : p -> p<start ? null : process.apply(p);
     }
-
-    /**
-     * An empty sequence with nothing to process.
-     */
-    Sequence EMPTY = new Sequence() {
-        @Override
-        public <R> R process(long start, LongFunction<? extends R> process, long offset) {
-            return null;
-        }
-    };
 }
