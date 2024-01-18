@@ -1,6 +1,5 @@
 package de.ditz.primes;
 
-import java.util.*;
 import java.util.function.LongFunction;
 
 /**
@@ -21,14 +20,19 @@ import java.util.function.LongFunction;
  *
  * All 256 instances of a CompactSequence are cached in a precalculated List.
  */
-public class CompactSequence implements Sequence {
+abstract public class CompactSequence implements Sequence {
 
     public static int SIZE = 2*3*5;
 
+    public static long PROD = 7*11*13*17*19*23*29;
+
     final long sequence;
 
-    private CompactSequence(long sequence) {
+    final long prod;
+
+    CompactSequence(long sequence, long prod) {
         this.sequence = sequence;
+        this.prod = prod;
     }
 
     public byte mask() {
@@ -98,178 +102,40 @@ public class CompactSequence implements Sequence {
     }
 
     public CompactSequence drop(int factor) {
-        return sequence(mask(mask(), factor));
-    }
+        int mask = mask();
 
-    public CompactSequence from(long start) {
+        if(factor>1 && prod%factor==0) {
+            // get # of prime by interpolation.
+            int n = (5*factor-3)/48;
+            return Sequences.sequence(mask^(1<<n));
+        } else if(factor==1) {
+            if(mask%2==1)
+                return Sequences.sequence(mask^1);
+        }
 
-        if(start<=1)
-            return this;
-
-        if(start>=30) // skip all
-            return empty();
-
-        int m = MASKS[(int)start];
-        m = (m-1) + (m&1); // 0x80 -> 0x7F, 0x7F -> 0x7F
-
-        int mask = this.mask();
-        if((mask&m)==0) // nothing to drop
-            return this;
-
-        mask &= m&0xff;
-        return sequence(mask);
-    }
-
-    private static final int[] MASKS = new int[30];
-
-    static final List<CompactSequence> SEQUENCES ;
-
-    public static CompactSequence sequence(int index) {
-        return SEQUENCES.get(index&0xff);
-    }
-
-    static CompactSequence root() {
-        return sequence(255);
-    }
-
-    static CompactSequence empty() {
-        return sequence(0);
+        return this;
     }
 
     /**
-     * Drop a given factor [0,30] from the mask of factors.
-     * @param index of the compact sequence.
+     * Drop a given factor [0,30] from a mask of factors.
+     * @param mask of the compact sequence.
      * @param factor to drop.
-     * @return index of the reduced sequence.
+     * @return reduced prime factor mask.
      */
-    public static byte mask(int index, int factor) {
+    public static int drop(int mask, int factor) {
 
-        if(factor>0 && factor<30) {
-            int m = MASKS[factor];
-            if(m%2 == 0) // odd masks are ignored
-                index &= m^0xff;
+       if(factor>0 && PROD%factor==0) {
+            // get # of prime by interpolation.
+            int n = (5*factor-3)/48;
+            mask &= 0xff & (1<<n);
+        } else if(factor==1) {
+            mask &= 0xfe;
         }
 
-        return (byte)index;
+        return mask;
     }
 
-    static {
-
-        int[] BASE = {1,7,11,13,17,19,23,29};
-
-        // ..,1,..,7,..,11,..,13,..,17,..,19,..,23,..,29
-        //  0,1...,2,03,04,07,08,0F,10,1F,20,3F,40,7F,80
-
-        for(int i=0, n=0; i<BASE.length; ++i) {
-            int p = BASE[i];
-            int m = (1<<i)-1;
-            while(n<p)
-                MASKS[n++] = m;
-            MASKS[p] = m+1;
-            ++n;
-        }
-
-        CompactSequence empty = new CompactSequence(0) {
-
-            @Override
-            public int get(int index) {
-                throw new IndexOutOfBoundsException();
-            }
-
-            @Override
-            public int size() {
-                return 0;
-            }
-
-            @Override
-            public <R> R process(long start, LongFunction<? extends R> process, long offset) {
-                return null;
-            }
-
-            @Override
-            public <R> R process(LongFunction<? extends R> process, long offset) {
-                return null;
-            }
-
-            @Override
-            public CompactSequence drop(int factor) {
-                return this;
-            }
-
-            @Override
-            public CompactSequence from(long start) {
-                return this;
-            }
-        };
-
-        // setup sequences.
-        CompactSequence[] sequences = new CompactSequence[256];
-
-        sequences[0] = empty;
-
-        // 8 single track sequences
-        for(int i=0; i<BASE.length; ++i) {
-            int p = BASE[i];
-            long sequence = 1<<i;
-            if(i>0)
-                sequence |= p<<8;
-
-            sequences[1<<i] = new CompactSequence(sequence) {
-
-                @Override
-                public int get(int index) {
-                    if(index==0)
-                        return p;
-
-                    throw new IndexOutOfBoundsException();
-                }
-
-                @Override
-                public int size() {
-                    return 1;
-                }
-
-                @Override
-                public <R> R process(long start, LongFunction<? extends R> process, long offset) {
-                    return start>p ? null : process.apply(p+offset);
-                }
-
-                @Override
-                public <R> R process(LongFunction<? extends R> process, long offset) {
-                    return process.apply(p+offset);
-                }
-
-                @Override
-                public CompactSequence drop(int factor) {
-                    return factor==p ? empty : this;
-                }
-
-                @Override
-                public CompactSequence from(long start) {
-                    return p<start ? empty : this;
-                }
-            };
-        }
-
-        // generate 256 remaining sequences
-        for(int m=0; m<256; ++m) {
-            if(sequences[m]!=null)
-                continue;
-
-            long sequence = 0;
-
-            for(int i=7; i>0; --i) {
-                if(((m>>i)&1) != 0) {
-                    sequence = (sequence<<8) + BASE[i];
-                }
-            }
-
-            sequence = (sequence<<8) | (m&0xff);
-            sequences[m] = new CompactSequence(sequence);
-        }
-
-        SEQUENCES = List.of(sequences);
-    }
+    abstract public CompactSequence from(long start);
 
     @Override
     public String toString() {
@@ -282,9 +148,5 @@ public class CompactSequence implements Sequence {
         }
         sb.append(')');
         return sb.toString();
-    }
-
-    public static void main(String ... args) {
-        SEQUENCES.forEach(System.out::println);
     }
 }

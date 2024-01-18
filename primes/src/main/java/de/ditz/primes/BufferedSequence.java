@@ -28,7 +28,7 @@ public class BufferedSequence extends AbstractList<CompactSequence> implements R
 
     @Override
     public CompactSequence get(int i) {
-        return CompactSequence.sequence(0xff&buffer.get(i));
+        return Sequences.sequence(0xff&buffer.get(i));
     }
 
     @Override
@@ -51,7 +51,7 @@ public class BufferedSequence extends AbstractList<CompactSequence> implements R
 
         for(long i = CompactSequence.count(base - start); result==null && i<buffer.capacity(); ++i) {
             byte m = buffer.get((int)i);
-            CompactSequence s = CompactSequence.sequence(m);
+            CompactSequence s = Sequences.sequence(m);
             result = s.process(start, process, base+(long)CompactSequence.SIZE*i);
         }
 
@@ -64,9 +64,9 @@ public class BufferedSequence extends AbstractList<CompactSequence> implements R
             long pos = CompactSequence.count(index);
             if (pos < buffer.capacity()) {
                 byte seq = buffer.get((int) pos);
-                byte dropped = CompactSequence.mask(seq, (int)(index % CompactSequence.SIZE));
+                int dropped = CompactSequence.drop(seq, (int)(index % CompactSequence.SIZE));
                 if (dropped != seq) {
-                    buffer.put((int) pos, dropped);
+                    buffer.put((int) pos, (byte)dropped);
                     return true;
                 }
             }
@@ -77,41 +77,13 @@ public class BufferedSequence extends AbstractList<CompactSequence> implements R
 
     public static BufferedSequence build(long limit) {
 
-        return CompactSequence.root().process(7, new LongFunction<BufferedSequence>() {
+        return Sequences.ROOT.process(7, new LongFunction<BufferedSequence>() {
 
             BufferedSequence current;
 
             {
                 current = new BufferedSequence(1);
-                current.buffer.put(0, CompactSequence.root().mask());
-            }
-
-            long dups = 0;
-
-            /**
-             * Drop all numbers of product*factor^n < limit from current sequence
-             * @param base factor
-             * @param factor additional factor
-             */
-            BufferedSequence drop(long base, long factor) {
-
-                long product = base * factor;
-
-                // done
-                if(product>=current.limit())
-                    return current;
-
-                if(current.drop(product)) {
-                    if(product * factor<current.limit()) {
-                        drop(product, factor);
-                        current.process(factor + 1, p -> drop(product, p));
-                        return current;
-                    }
-                } else {
-                    ++dups;
-                }
-
-                return null;
+                current.buffer.put(0, Sequences.ROOT.mask());
             }
 
             @Override
@@ -122,22 +94,24 @@ public class BufferedSequence extends AbstractList<CompactSequence> implements R
 
                 // compose a new buffer of factor * capacity of current buffer
                 int cap = current.buffer.capacity();
-                long next = factor * cap;
+                long product = factor * cap;
 
-                if(next>Integer.MAX_VALUE)
+                if(product>Integer.MAX_VALUE)
                     throw new IndexOutOfBoundsException();
 
-                ByteBuffer buffer = ByteBuffer.allocateDirect((int) next);
+                ByteBuffer buffer = ByteBuffer.allocateDirect((int) product);
                 for (int i = 0; i < factor; ++i) {
                     buffer.put(i * cap, current.buffer, 0, cap);
                 }
 
-                // replace by expanded sequence
-                current = new BufferedSequence(buffer);
+                BufferedSequence next = new BufferedSequence(buffer);
 
-                drop(1, factor);
-                
-                return factor < limit ? null : current;
+                current = new Sieve(next, factor).sieve(next, 0);
+
+                if(factor < limit)
+                    return null;
+                else
+                    return current;
             }
         });
     }

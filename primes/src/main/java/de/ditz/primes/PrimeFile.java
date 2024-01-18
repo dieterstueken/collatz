@@ -84,7 +84,7 @@ public class PrimeFile extends AbstractList<BufferedSequence> implements Sequenc
     public <R> R process(long start, LongFunction<? extends R> process, long offset) {
 
         // substitute first compact sequence since it does not contain any primes < 17.
-        R result = CompactSequence.root().process(start, process, offset);
+        R result = Sequences.ROOT.process(start, process, offset);
 
         if(result==null) {
 
