@@ -10,7 +10,7 @@ import java.util.function.LongFunction;
  * Date: 14.01.24
  * Time: 14:43
  */
-public class BufferedSequence extends AbstractList<CompactSequence> implements RandomAccess, Sequence {
+public class BufferedSequence extends AbstractList<ByteSequence> implements RandomAccess, Sequence {
 
     protected final ByteBuffer buffer;
 
@@ -27,7 +27,7 @@ public class BufferedSequence extends AbstractList<CompactSequence> implements R
     }
 
     @Override
-    public CompactSequence get(int i) {
+    public ByteSequence get(int i) {
         return Sequences.sequence(0xff&buffer.get(i));
     }
 
@@ -37,11 +37,11 @@ public class BufferedSequence extends AbstractList<CompactSequence> implements R
     }
 
     public long limit() {
-        return (long)CompactSequence.SIZE * buffer.capacity();
+        return (long) ByteSequence.SIZE * buffer.capacity();
     }
 
     public long count() {
-        return stream().mapToInt(CompactSequence::size).sum();
+        return stream().mapToInt(ByteSequence::size).sum();
     }
 
     @Override
@@ -49,10 +49,10 @@ public class BufferedSequence extends AbstractList<CompactSequence> implements R
 
         R result = null;
 
-        for(long i = CompactSequence.count(base - start); result==null && i<buffer.capacity(); ++i) {
+        for(long i = ByteSequence.count(base - start); result==null && i<buffer.capacity(); ++i) {
             byte m = buffer.get((int)i);
-            CompactSequence s = Sequences.sequence(m);
-            result = s.process(start, process, base+(long)CompactSequence.SIZE*i);
+            ByteSequence s = Sequences.sequence(m);
+            result = s.process(start, process, base+(long) ByteSequence.SIZE*i);
         }
 
         return result;
@@ -61,10 +61,10 @@ public class BufferedSequence extends AbstractList<CompactSequence> implements R
     public boolean drop(long index) {
 
         if(index>0) {
-            long pos = CompactSequence.count(index);
+            long pos = ByteSequence.count(index);
             if (pos < buffer.capacity()) {
                 byte seq = buffer.get((int) pos);
-                int dropped = CompactSequence.drop(seq, (int)(index % CompactSequence.SIZE));
+                int dropped = ByteSequence.expunge(seq, (int)(index % ByteSequence.SIZE));
                 if (dropped != seq) {
                     buffer.put((int) pos, (byte)dropped);
                     return true;
@@ -83,7 +83,7 @@ public class BufferedSequence extends AbstractList<CompactSequence> implements R
 
             {
                 current = new BufferedSequence(1);
-                current.buffer.put(0, Sequences.ROOT.mask());
+                current.buffer.put(0, Sequences.ROOT.getByte());
             }
 
             @Override

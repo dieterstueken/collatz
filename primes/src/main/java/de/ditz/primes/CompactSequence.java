@@ -20,24 +20,16 @@ import java.util.function.LongFunction;
  *
  * All 256 instances of a CompactSequence are cached in a precalculated List.
  */
-abstract public class CompactSequence implements Sequence {
-
-    public static int SIZE = 2*3*5;
-
-    public static long PROD = 7*11*13*17*19*23*29;
+abstract public class CompactSequence extends ByteSequence {
 
     final long sequence;
 
-    final long prod;
-
     CompactSequence(long sequence, long prod) {
+        super(prod);
         this.sequence = sequence;
-        this.prod = prod;
     }
 
-    public byte mask() {
-        return (byte)(sequence&0xff);
-    }
+    abstract public int mask();
 
     /**
      * Get the factor at index from the sequence.
@@ -45,33 +37,13 @@ abstract public class CompactSequence implements Sequence {
      * @return the number at index.
      * @throws IndexOutOfBoundsException - if the index is out of range
      */
-    public int get(int index) {
-        int factor = 0;
-
-        if((sequence&1)!=0) {
-            if(index==0)
-                return 1;
-        } else {
-            ++index;
-        }
-
-        if (index>0 && index < 8) {
-            factor = (byte) ((sequence >> (8 * index)) & 0xff);
-        }
+    public int getPrime(int index) {
+        int factor = (byte) ((sequence >> (8 * index)) & 0xff);
 
         if(factor==0)
             throw new IndexOutOfBoundsException();
 
         return factor;
-    }
-
-    public int size() {
-        final byte mask = mask();
-        return Integer.bitCount(mask&0xff);
-    }
-
-    public static long count(long size) {
-        return size<0 ? 0 : size/SIZE;
     }
 
     @Override
@@ -81,61 +53,33 @@ abstract public class CompactSequence implements Sequence {
 
     @Override
     public <R> R process(LongFunction<? extends R> process, long offset) {
-
         R result = null;
 
-        // virtual 1
-        if((sequence&1)!=0) {
-            result = process.apply(offset+1);
-        }
-
         // drop mask
-        for(long values = sequence>>8; result==null && values!=0; values >>= 8) {
+        for(long values = sequence; result==null && values!=0; values >>= 8) {
             result = process.apply(offset + (values & 0xff));
         }
 
         return result;
     }
 
-    public CompactSequence drop(long factor) {
-        return drop((int)factor);
-    }
+    @Override
+    public ByteSequence expunge(long factor) {
+        ByteSequence result = this;
 
-    public CompactSequence drop(int factor) {
         int mask = mask();
 
-        if(factor>1 && prod%factor==0) {
+        if((factor>1) && (prod%factor) == 0) {
             // get # of prime by interpolation.
-            int n = (5*factor-3)/48;
-            return Sequences.sequence(mask^(1<<n));
-        } else if(factor==1) {
+            int n = (int)(5* factor - 3)/48;
+            result = Sequences.sequence(mask^(1<<n));
+        } else if(factor ==1) {
             if(mask%2==1)
-                return Sequences.sequence(mask^1);
+                result = Sequences.sequence(mask^1);
         }
 
-        return this;
+        return result;
     }
-
-    /**
-     * Drop a given factor [0,30] from a mask of factors.
-     * @param mask of the compact sequence.
-     * @param factor to drop.
-     * @return reduced prime factor mask.
-     */
-    public static int drop(int mask, int factor) {
-
-       if(factor>0 && PROD%factor==0) {
-            // get # of prime by interpolation.
-            int n = (5*factor-3)/48;
-            mask &= 0xff & (1<<n);
-        } else if(factor==1) {
-            mask &= 0xfe;
-        }
-
-        return mask;
-    }
-
-    abstract public CompactSequence from(long start);
 
     @Override
     public String toString() {

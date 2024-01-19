@@ -72,7 +72,7 @@ public class PrimeFile extends AbstractList<BufferedSequence> implements Sequenc
     }
 
     long blocks(long start) {
-        return file.blocks(CompactSequence.count(start));
+        return file.blocks(ByteSequence.count(start));
     }
 
     /**
