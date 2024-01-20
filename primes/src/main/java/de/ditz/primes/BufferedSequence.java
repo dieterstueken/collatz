@@ -1,7 +1,8 @@
 package de.ditz.primes;
 
 import java.nio.ByteBuffer;
-import java.util.*;
+import java.util.AbstractList;
+import java.util.RandomAccess;
 import java.util.function.LongFunction;
 
 /**
@@ -50,7 +51,7 @@ public class BufferedSequence extends AbstractList<ByteSequence> implements Rand
         R result = null;
 
         for(long i = ByteSequence.count(base - start); result==null && i<buffer.capacity(); ++i) {
-            byte m = buffer.get((int)i);
+            int m = 0xff & buffer.get((int)i);
             ByteSequence s = Sequences.sequence(m);
             result = s.process(start, process, base+(long) ByteSequence.SIZE*i);
         }

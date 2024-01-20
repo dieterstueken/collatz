@@ -1,13 +1,19 @@
 package de.ditz.primes;
 
-import java.util.*;
+import java.util.AbstractList;
+import java.util.List;
+import java.util.RandomAccess;
 import java.util.function.LongFunction;
 
 public class SingleSequence extends ByteSequence {
 
-   public static final SingleSequence EMPTY = empty();
+   public static final SingleSequence EMPTY = new EmptySequence();
 
-   public static final List<? extends SingleSequence> SINGLES = singles();
+   public static final List<? extends SingleSequence> SINGLES = new Singles();
+
+   public static SingleSequence single(int index) {
+      return SINGLES.get(index);
+   }
 
    final Integer factor;
 
@@ -34,18 +40,13 @@ public class SingleSequence extends ByteSequence {
    }
 
    @Override
-   public Integer get(int index) {
+   public int factor(int index) {
       return index==0 ? factor : super.get(index);
    }
 
    @Override
-   public int lastPrime() {
-      return factor;
-   }
-
-   @Override
-   public SingleSequence lastSequence() {
-      return this;
+   public Integer get(int index) {
+      return index==0 ? factor : super.get(index);
    }
 
    @Override
@@ -63,44 +64,52 @@ public class SingleSequence extends ByteSequence {
       return start>factor ? null : process.apply(factor);
    }
 
-   private static List<SingleSequence> singles() {
+   static class Singles extends AbstractList<SingleSequence> implements RandomAccess {
 
-      int size = FACTORS.size();
+      private SingleSequence[] singles = new SingleSequence[8];
 
-      SingleSequence[] singles = new SingleSequence[size];
-
-      for(int i=0; i<size; ++i) {
-         singles[i] = new SingleSequence(FACTORS.get(i), 1<<i);
+      {
+         for(int i=0; i<8; ++i) {
+            singles[i] = new SingleSequence(FACTORS.get(i), 1<<i);
+         }
       }
 
-      return List.of(singles);
+      @Override
+      public SingleSequence get(int i) {
+         return singles[i];
+      }
+
+      @Override
+      public int size() {
+         return 8;
+      }
    }
 
-   private static SingleSequence empty() {
+   private static class EmptySequence extends SingleSequence {
 
-      // fake single sequence with product = 0
-      return new SingleSequence(0,0) {
-
-         /**
-          * Empty list of primes.
-          * But let get(0) still return 0;
-          *
-          * @return 0
-          */
-         @Override
-         public int size() {
-            return 0;
-         }
-
-         @Override
-         public ByteSequence expunge(long prime) {
-            return this;
-         }
-
-         @Override
-         public ByteSequence from(long start) {
-            return this;
-         }
+      EmptySequence() {
+         super(0,0);
       };
+
+      /**
+       * Empty list of primes.
+       * But let get(0) still return 0;
+       *
+       * @return 0
+       */
+      @Override
+      public int size() {
+         return 0;
+      }
+
+      @Override
+      public ByteSequence expunge(long prime) {
+         return this;
+      }
+
+      @Override
+      public ByteSequence from(long start) {
+         return this;
+      }
    }
 }

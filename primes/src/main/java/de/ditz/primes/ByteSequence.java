@@ -1,7 +1,9 @@
 package de.ditz.primes;
 
 
-import java.util.*;
+import java.util.AbstractList;
+import java.util.List;
+import java.util.RandomAccess;
 import java.util.function.LongFunction;
 
 /*
@@ -24,7 +26,7 @@ abstract public class ByteSequence extends AbstractList<Integer> implements Rand
    }
 
    /**
-    * @return a bit mask representing containing primes
+    * @return a bit mask representing containing factors
     */
    abstract public int mask();
 
@@ -41,22 +43,15 @@ abstract public class ByteSequence extends AbstractList<Integer> implements Rand
     * @return the factor at index
     */
    public Integer get(int index) {
-      throw new IndexOutOfBoundsException();
+      return factor(index);
    }
 
    /**
     * @return the factor at index as plain int.
     */
-   public int getPrime(int index) {
-      return get(index);
+   public int factor(int index) {
+      throw new IndexOutOfBoundsException();
    }
-
-   abstract public int lastPrime();
-
-   /**
-    * @return a byte sequence representing the biggest factor or EMPTY.
-    */
-   abstract public SingleSequence lastSequence();
 
    /**
     * Return a truncated ByteSequence omitting all factors < start.
@@ -93,6 +88,27 @@ abstract public class ByteSequence extends AbstractList<Integer> implements Rand
    }
 
    /**
+    * Calculate the # of (prime) factors <= l.
+    * @param l limit of factors to count .
+    * @return # of factors <= l.
+    */
+   public static int pcount(int l) {
+      if(l<7)
+         return l<1 ? 0 : 1;
+
+      if(l>23)
+         return 8;
+
+      // get position
+      l = 4*((l+1)/2);
+
+      // pick a digit
+      l = (int)(0x8777665443221110L >> l) & 0xf;
+
+      return l;
+   }
+
+   /**
     * Drop a given factor [0,30] from a mask of factors.
     * @param mask of the compact sequence.
     * @param factor to drop.
@@ -109,5 +125,12 @@ abstract public class ByteSequence extends AbstractList<Integer> implements Rand
       }
 
       return mask;
+   }
+   
+   public static void main(String ... args) {
+      
+      for(int i=-1; i<33; ++i) {
+         System.out.format("%2d: %d\n", i, pcount(i));
+      }
    }
 }

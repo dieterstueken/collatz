@@ -1,101 +1,60 @@
 package de.ditz.primes;
 
-import java.util.*;
+import java.util.AbstractList;
+import java.util.RandomAccess;
 
-public class Sequences {
+class Sequences extends AbstractList<ByteSequence> implements RandomAccess {
 
-   public static final List<? extends ByteSequence> SEQUENCES = sequences();
+   public static final AbstractList<ByteSequence> ALL = new Sequences();
 
-   public static final ByteSequence EMPTY = SEQUENCES.get(0);
-
-   public static final ByteSequence ROOT = SEQUENCES.get(255);
+   public static final ByteSequence ROOT = ALL.get(255);
 
    public static ByteSequence sequence(int index) {
-      return SEQUENCES.get(index&0xff);
+      return ALL.get(index);
    }
 
-   private static List<ByteSequence> sequences() {
+   private final ByteSequence[] sequences = new ByteSequence[256];
 
-      ByteSequence[] sequences = new ByteSequence[256];
+   @Override
+   public int size() {
+      return 256;
+   }
 
+   @Override
+   public ByteSequence get(int index) {
+      return sequences[index];
+   }
+
+   {
       sequences[0] = SingleSequence.EMPTY;
 
       // transfer 8 single track sequences
-      SingleSequence.SINGLES.forEach(single -> {
-         sequences[single.factor()] = single;
-      });
-
-      // for() clip masks
-      int[] clips = new int[30];
-
-      for(int i=0, j=0; i<8; ++i) {
-         int p = ByteSequence.FACTORS.get(i);
-         int m = (2 << i) - 1;
-         Arrays.fill(clips, j, i + 1, m);
-      }
+      SingleSequence.SINGLES.forEach(single -> sequences[single.factor()] = single);
 
       for(int m=2; m<256; ++m) {
-
-         if(sequences[m]!=null)
-            continue;
-
-         // index of last 1 bit (-1 if empty)
-         int l = 31 - Integer.numberOfLeadingZeros(m);
-         SingleSequence last = SingleSequence.SINGLES.get(l);
-
-         long sequence = 0;
-         long prod = 1;
-         int size = Integer.bitCount(m);
-
-         for(int i=7; i>0; --i) {
-            if(((m>>i)&1) != 0) {
-               int p = ByteSequence.FACTORS.get(i);
-               sequence = (sequence<<8) + p;
-               prod *= p;
-            }
-         }
-
-         int mask = m;
-
-         sequences[m] = new CompactSequence(sequence, prod) {
-            @Override
-            public int mask() {
-               return mask;
-            }
-
-            @Override
-            public int size() {
-               return size;
-            }
-
-            @Override
-            public int lastPrime() {
-               return last.factor();
-            }
-
-            @Override
-            public SingleSequence lastSequence() {
-               return last;
-            }
-
-            @Override
-            public ByteSequence from(long start) {
-               if (start>0 && start < 30) {
-                  int m = mask();
-                  int k = m&clips[(int)start];
-                  if(m!=k)
-                     return sequence(k);
-               }
-
-               return this;
-            }
-         };
+         if(sequences[m]==null)
+            sequences[m] = create(m);
       }
-
-      return List.of(sequences);
    }
 
+   private CompactSequence create(int mask) {
+      long sequence = 0;
+      long prod = 1;
+
+      // reversed
+      for(int i=7; i>0; --i) {
+         if(((mask>>i)&1) != 0) {
+            int p = ByteSequence.FACTORS.get(i);
+            sequence = (sequence<<8) + p;
+            prod *= p;
+         }
+      }
+
+      return new CompactSequence(mask, prod, sequence);
+   }
+
+
    public static void main(String ... args) {
-      SEQUENCES.forEach(System.out::println);
+      ALL.forEach(System.out::println);
    }
 }

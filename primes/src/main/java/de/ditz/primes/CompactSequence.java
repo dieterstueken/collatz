@@ -20,16 +20,29 @@ import java.util.function.LongFunction;
  *
  * All 256 instances of a CompactSequence are cached in a precalculated List.
  */
-abstract public class CompactSequence extends ByteSequence {
+public class CompactSequence extends ByteSequence {
+
+    final int mask;
 
     final long sequence;
 
-    CompactSequence(long sequence, long prod) {
+    int size;
+
+    CompactSequence(int mask, long prod, long sequence) {
         super(prod);
         this.sequence = sequence;
+        this.mask = mask;
+        this.size = Integer.bitCount(mask);
     }
 
-    abstract public int mask();
+    @Override
+    public int size() {
+        return size;
+    }
+
+    public int mask() {
+        return mask;
+    }
 
     /**
      * Get the factor at index from the sequence.
@@ -37,13 +50,61 @@ abstract public class CompactSequence extends ByteSequence {
      * @return the number at index.
      * @throws IndexOutOfBoundsException - if the index is out of range
      */
-    public int getPrime(int index) {
+    public int factor(int index) {
         int factor = (byte) ((sequence >> (8 * index)) & 0xff);
 
         if(factor==0)
             throw new IndexOutOfBoundsException();
 
         return factor;
+    }
+
+    @Override
+    public ByteSequence expunge(long factor) {
+        ByteSequence result = this;
+
+        if((factor>1) && (prod%factor) == 0) {
+            // get # of prime by interpolation.
+            int n = (int)(5* factor - 3)/48;
+            result = Sequences.sequence(mask^(1<<n));
+        } else if(factor ==1) {
+            if(mask%2==1)
+                result = Sequences.sequence(mask^1);
+        }
+
+        return result;
+    }
+
+    @Override
+    public ByteSequence from(long start) {
+
+        if(start<=7) {
+            if(mask>1 && mask%2!=0) // drop 1
+                return Sequences.sequence(mask&0xfe);
+        } else {
+
+            if (start > 28)
+                return SingleSequence.EMPTY;
+
+            int m = (int) start;
+
+            // count of factors until start
+            m = ByteSequence.pcount(m-1);
+
+            // mask of factors to drop
+            m = (1 << m) - 1;
+
+            // invert
+            m ^= 0xff;
+
+            // remaining mask
+            m &= mask;
+
+            if (m != mask)
+                return Sequences.sequence(m);
+        }
+
+        return this;
     }
 
     @Override
@@ -63,32 +124,15 @@ abstract public class CompactSequence extends ByteSequence {
         return result;
     }
 
-    @Override
-    public ByteSequence expunge(long factor) {
-        ByteSequence result = this;
-
-        int mask = mask();
-
-        if((factor>1) && (prod%factor) == 0) {
-            // get # of prime by interpolation.
-            int n = (int)(5* factor - 3)/48;
-            result = Sequences.sequence(mask^(1<<n));
-        } else if(factor ==1) {
-            if(mask%2==1)
-                result = Sequences.sequence(mask^1);
-        }
-
-        return result;
-    }
 
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("CompactSequence(");
-        sb.append("%02X".formatted(mask()));
+        sb.append("%02X".formatted(mask));
         char c=':';
-        for(int i=0; i<size(); ++i) {
-            sb.append(c).append("%02d".formatted(get(i)));
-            c=',';
+        for (Integer integer : this) {
+            sb.append(c).append("%02d".formatted(integer));
+            c = ',';
         }
         sb.append(')');
         return sb.toString();
