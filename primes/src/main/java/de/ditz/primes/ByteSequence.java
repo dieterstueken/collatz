@@ -1,9 +1,7 @@
 package de.ditz.primes;
 
 
-import java.util.AbstractList;
-import java.util.List;
-import java.util.RandomAccess;
+import java.util.*;
 import java.util.function.LongFunction;
 
 /*
@@ -114,14 +112,20 @@ abstract public class ByteSequence extends AbstractList<Integer> implements Rand
     * @param factor to drop.
     * @return reduced prime factor mask.
     */
-   public static int expunge(int mask, int factor) {
+   public static int expunge(int mask, long factor) {
 
-      if(factor>0 && PROD%factor==0) {
-         // get # of prime by interpolation.
-         int n = (5*factor-3)/48;
-         mask &= 0xff & (1<<n);
-      } else if(factor==1) {
-         mask &= 0xfe;
+      if(factor<=7) {
+         if(mask>1 && mask%2!=0) // drop 1
+            mask &= 0xfe;
+      } else if(factor<30) {
+         // bit # to drop
+         int m = ByteSequence.pcount((int)factor) - 1;
+
+         // as bitmask
+         m = 1 << m;
+
+         // drop
+         mask &= ~m;
       }
 
       return mask;

@@ -20,7 +20,7 @@ import java.util.function.LongFunction;
  *
  * All 256 instances of a CompactSequence are cached in a precalculated List.
  */
-public class CompactSequence extends ByteSequence {
+abstract public class CompactSequence extends ByteSequence {
 
     final int mask;
 
@@ -57,54 +57,6 @@ public class CompactSequence extends ByteSequence {
             throw new IndexOutOfBoundsException();
 
         return factor;
-    }
-
-    @Override
-    public ByteSequence expunge(long factor) {
-        ByteSequence result = this;
-
-        if((factor>1) && (prod%factor) == 0) {
-            // get # of prime by interpolation.
-            int n = (int)(5* factor - 3)/48;
-            result = Sequences.sequence(mask^(1<<n));
-        } else if(factor ==1) {
-            if(mask%2==1)
-                result = Sequences.sequence(mask^1);
-        }
-
-        return result;
-    }
-
-    @Override
-    public ByteSequence from(long start) {
-
-        if(start<=7) {
-            if(mask>1 && mask%2!=0) // drop 1
-                return Sequences.sequence(mask&0xfe);
-        } else {
-
-            if (start > 28)
-                return SingleSequence.EMPTY;
-
-            int m = (int) start;
-
-            // count of factors until start
-            m = ByteSequence.pcount(m-1);
-
-            // mask of factors to drop
-            m = (1 << m) - 1;
-
-            // invert
-            m ^= 0xff;
-
-            // remaining mask
-            m &= mask;
-
-            if (m != mask)
-                return Sequences.sequence(m);
-        }
-
-        return this;
     }
 
     @Override

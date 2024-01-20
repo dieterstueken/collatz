@@ -36,6 +36,10 @@ public class Sieve {
 
                 boolean dropped = sequence.drop(product - offset);
 
+                if(!dropped) {
+                    sequence.drop(product - offset);
+                }
+
                 System.out.format("%2d x %2d = %3d %s\n", p0, p1, product, dropped ? "!":"");
 
                 if(dropped)
