@@ -15,12 +15,16 @@ public class BufferedSequence extends AbstractList<ByteSequence> implements Rand
 
     final ByteBuffer buffer;
 
-    public BufferedSequence(ByteBuffer buffer) {
+    final long offset;
+
+    public BufferedSequence(long offset, ByteBuffer buffer) {
         this.buffer = buffer;
+        this.offset = offset;
     }
 
-    public BufferedSequence(int size) {
+    public BufferedSequence(long offset, int size) {
         this.buffer = ByteBuffer.allocateDirect(size);
+        this.offset = offset;
     }
 
     public ByteBuffer getBuffer() {
@@ -38,7 +42,7 @@ public class BufferedSequence extends AbstractList<ByteSequence> implements Rand
     }
 
     public long limit() {
-        return (long) ByteSequence.SIZE * buffer.capacity();
+        return offset + ByteSequence.SIZE * buffer.capacity();
     }
 
     public long count() {
@@ -46,14 +50,34 @@ public class BufferedSequence extends AbstractList<ByteSequence> implements Rand
     }
 
     @Override
-    public <R> R process(long start, LongFunction<? extends R> process, long base) {
+    public <R> R process(long start, LongFunction<? extends R> process) {
+
+        if(start>=limit())
+            return null;
+
+        if(start<offset)
+            start=offset;
 
         R result = null;
 
-        for(long i = ByteSequence.count(base - start); result==null && i<buffer.capacity(); ++i) {
-            int m = 0xff & buffer.get((int)i);
+        // find bytes to skip.
+        int n = (int)((start-offset)/ByteSequence.SIZE);
+
+        // process first block
+        start -= n*ByteSequence.SIZE;
+        if(start>0 && n<size()) {
+            int m = 0xff & buffer.get(n);
             ByteSequence sequence = Sequences.sequence(m);
-            result = sequence.process(start, process, base + i*ByteSequence.SIZE);
+            result = sequence.process(start, process, offset + n*ByteSequence.SIZE);
+            ++n;
+        }
+
+        // continue with remaining bytes
+        while(result == null && n<size()) {
+            int m = 0xff & buffer.get(n);
+            ByteSequence sequence = Sequences.sequence(m);
+            result = sequence.process(process, offset + n*ByteSequence.SIZE);
+            ++n;
         }
 
         return result;
@@ -65,6 +89,8 @@ public class BufferedSequence extends AbstractList<ByteSequence> implements Rand
      * @return true if the number was dropped.
      */
     public boolean drop(long number) {
+
+        number -= offset;
 
         if(number>0) {
             long pos = ByteSequence.count(number);
@@ -87,14 +113,50 @@ public class BufferedSequence extends AbstractList<ByteSequence> implements Rand
         return false;
     }
 
+    BufferedSequence sieve(Sequence primes, long start) {
+        return sieve(primes, start, this.offset);
+    }
+
+    BufferedSequence sieve(Sequence primes, long start, long offset) {
+
+        long limit = limit();
+
+        BufferedSequence result = primes.process(start, p0 -> {
+            long skip = 1 + offset / p0;
+            if (skip < p0)
+                skip = p0;
+
+            if (skip * p0 >= limit)
+                return this;
+
+            primes.process(skip, p1 -> {
+                long product = p0 * p1;
+                if (product > limit)
+                    return this;
+
+                boolean dropped = drop(product);
+                if (dropped)
+                    return null;
+                else
+                    return null;
+            });
+            return null;
+        });
+
+        if(result==null)
+            throw new IllegalStateException("primes under run");
+
+        return result;
+    }
+
     public static BufferedSequence build(long until) {
 
-        return Sequences.ROOT.process(7, new LongFunction<BufferedSequence>() {
+        return Sequences.ROOT.process(7, new LongFunction<>() {
 
             BufferedSequence current;
 
             {
-                current = new BufferedSequence(1);
+                current = new BufferedSequence(0, 1);
                 current.buffer.put(0, Sequences.ROOT.getByte());
             }
 
@@ -116,9 +178,7 @@ public class BufferedSequence extends AbstractList<ByteSequence> implements Rand
                     buffer.put(i * cap, current.buffer, 0, cap);
                 }
 
-                BufferedSequence next = new BufferedSequence(buffer);
-
-                current = new Sieve(next, factor, cap*ByteSequence.SIZE).sieve(next, 0);
+                current = new BufferedSequence(0, buffer).sieve(current, factor, cap*ByteSequence.SIZE);
 
                 if(factor < until)
                     return null;
@@ -129,10 +189,10 @@ public class BufferedSequence extends AbstractList<ByteSequence> implements Rand
     }
 
     public static void main(String ... args) {
-        BufferedSequence sequence = build(13);
+        BufferedSequence sequence = build(11);
 
         System.out.format("%,d %,d\n", sequence.limit(), sequence.count());
 
-        sequence.process(Sequence.all(System.out::println));
+        //sequence.process(Sequence.all(System.out::println));
     }
 }

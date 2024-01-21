@@ -62,7 +62,22 @@ public class SingleSequence extends ByteSequence {
 
    @Override
    public <R> R process(long start, LongFunction<? extends R> process, long offset) {
+      return start+offset>factor ? null : process.apply(factor+offset);
+   }
+
+   @Override
+   public <R> R process(long start, LongFunction<? extends R> process) {
       return start>factor ? null : process.apply(factor);
+   }
+
+   @Override
+   public <R> R process(LongFunction<? extends R> process, long offset) {
+      return process.apply(factor+offset);
+   }
+
+   @Override
+   public <R> R process(LongFunction<? extends R> process) {
+      return process.apply(factor);
    }
 
    static class Singles extends AbstractList<SingleSequence> implements RandomAccess {

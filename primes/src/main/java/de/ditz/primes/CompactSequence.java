@@ -60,6 +60,10 @@ abstract public class CompactSequence extends ByteSequence {
 
         return (int) factor;
     }
+    @Override
+    public <R> R process(long start, LongFunction<? extends R> process) {
+        return from(start).process(process, 0);
+    }
 
     @Override
     public <R> R process(long start, LongFunction<? extends R> process, long offset) {

@@ -19,18 +19,10 @@ public interface Sequence {
      * @param process to generate a result to stop the processing.
      * @return R result if the processor or null if the stream run to its end.
      */
-    <R> R process(long start, LongFunction<? extends R> process, long offset);
-
-    default <R> R process(long start, LongFunction<? extends R> process) {
-        return process(start, process, 0);
-    }
-
-    default <R> R process(LongFunction<? extends R> process, long offset) {
-        return process(0, process, offset);
-    }
+    <R> R process(long start, LongFunction<? extends R> process);
 
     default <R> R process(LongFunction<? extends R> process) {
-        return process(0, process, 0);
+        return process(0, process);
     }
 
     static LongFunction<Boolean> until(LongPredicate process) {
@@ -38,7 +30,7 @@ public interface Sequence {
     }
 
     static LongFunction<Boolean> all(LongConsumer process) {
-        return p -> {process.accept(p); return false;};
+        return p -> {process.accept(p); return null;};
     }
 
     static <R> LongFunction<R> shift(LongFunction<R> process, long offset) {

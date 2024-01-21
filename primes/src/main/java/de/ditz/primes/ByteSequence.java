@@ -79,10 +79,8 @@ abstract public class ByteSequence extends AbstractList<Integer> implements Rand
     */
    abstract public ByteSequence expunge(long factor);
 
-   @Override
    abstract public <R> R process(long start, LongFunction<? extends R> process, long offset);
 
-   @Override
    public <R> R process(LongFunction<? extends R> process, long offset) {
       return process(0, process, offset);
    }

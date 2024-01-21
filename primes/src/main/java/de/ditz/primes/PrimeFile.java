@@ -65,7 +65,8 @@ public class PrimeFile extends AbstractList<BufferedSequence> implements Sequenc
             BufferedSequence sequence = null;
 
             for(int k=sequences.size(); k<=i; ++k) {
-                sequence = new BufferedSequence(file.get(k));
+                long offset = i*BLOCK*ByteSequence.SIZE;
+                sequence = new BufferedSequence(offset, file.get(k));
                 if(sequence.buffer.capacity()==file.blockSize())
                     sequences.add(sequence);
             }
@@ -90,22 +91,29 @@ public class PrimeFile extends AbstractList<BufferedSequence> implements Sequenc
      * @return true if stopped by condition
      */
     @Override
-    public <R> R process(long start, LongFunction<? extends R> process, long offset) {
+    public <R> R process(long start, LongFunction<? extends R> process) {
 
-        // substitute first compact sequence since it does not contain any primes < 17.
-        R result = Sequences.ROOT.process(start, process, offset);
+        final long block = BLOCK*ByteSequence.SIZE;
 
-        if(result==null) {
+        if(start>block*size())
+            return null;
 
-            if (start < 30) // skip, since root sequence already done
-                start = 30;
+        // find blocks to skip.
+        int n = (int)(start/(block));
 
-            // possibly skip some blocks
-            for (int i = (int)blocks(start); result==null && i < this.size(); i++) {
-                BufferedSequence sequence = this.get(i);
-                result = sequence.process(start, process, offset);
-                offset += sequence.limit();
-            }
+        R result = null;
+
+        // process first block
+        start -= n*block;
+        if(start>0 && n<size()) {
+            BufferedSequence sequence = this.get(n++);
+            result = sequence.process(start, process);
+        }
+
+        // continue with remaining blocks
+        while(result == null && n<size()) {
+            BufferedSequence sequence = this.get(n++);
+            result = sequence.process(process);
         }
 
         return result;
