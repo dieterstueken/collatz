@@ -51,17 +51,19 @@ abstract public class CompactSequence extends ByteSequence {
      * @throws IndexOutOfBoundsException - if the index is out of range
      */
     public int factor(int index) {
-        int factor = (byte) ((sequence >> (8 * index)) & 0xff);
+        // peek value
+        long factor = sequence >> (8*index);
+        factor &= 0xff;
 
         if(factor==0)
             throw new IndexOutOfBoundsException();
 
-        return factor;
+        return (int) factor;
     }
 
     @Override
     public <R> R process(long start, LongFunction<? extends R> process, long offset) {
-        return from(start).process(process, offset);
+        return from(start-offset).process(process, offset);
     }
 
     @Override
@@ -74,19 +76,5 @@ abstract public class CompactSequence extends ByteSequence {
         }
 
         return result;
-    }
-
-
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder("CompactSequence(");
-        sb.append("%02X".formatted(mask));
-        char c=':';
-        for (Integer integer : this) {
-            sb.append(c).append("%02d".formatted(integer));
-            c = ',';
-        }
-        sb.append(')');
-        return sb.toString();
     }
 }

@@ -1,6 +1,7 @@
 package de.ditz.primes;
 
-import java.util.*;
+import java.util.AbstractList;
+import java.util.RandomAccess;
 
 class Sequences extends AbstractList<ByteSequence> implements RandomAccess {
 
@@ -28,7 +29,7 @@ class Sequences extends AbstractList<ByteSequence> implements RandomAccess {
       sequences[0] = SingleSequence.EMPTY;
 
       // transfer 8 single track sequences
-      SingleSequence.SINGLES.forEach(single -> sequences[single.factor()] = single);
+      SingleSequence.SINGLES.forEach(single -> sequences[single.mask()] = single);
 
       for(int m=2; m<256; ++m) {
          if(sequences[m]==null)
@@ -41,7 +42,7 @@ class Sequences extends AbstractList<ByteSequence> implements RandomAccess {
       long prod = 1;
 
       // reversed
-      for(int i=7; i>0; --i) {
+      for(int i=7; i>=0; --i) {
          if(((mask>>i)&1) != 0) {
             int p = ByteSequence.FACTORS.get(i);
             sequence = (sequence<<8) + p;
@@ -74,7 +75,7 @@ class Sequences extends AbstractList<ByteSequence> implements RandomAccess {
                m = ByteSequence.pcount(m-1);
 
                // mask of factors to drop
-               m = (1 << m) - 1;
+               m = (1<<m) - 1;
 
                // invert
                m ^= 0xff;

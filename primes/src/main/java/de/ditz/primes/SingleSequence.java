@@ -19,6 +19,7 @@ public class SingleSequence extends ByteSequence {
 
    final int mask;
 
+
    protected SingleSequence(Integer factor, int mask) {
       super(factor);
       this.factor = factor;
@@ -90,6 +91,11 @@ public class SingleSequence extends ByteSequence {
       EmptySequence() {
          super(0,0);
       };
+
+      @Override
+      public String toString() {
+         return "00[]";
+      }
 
       /**
        * Empty list of primes.

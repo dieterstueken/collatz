@@ -3,7 +3,10 @@ package de.ditz.primes;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.*;
+import java.util.AbstractList;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.RandomAccess;
 import java.util.function.LongFunction;
 
 /**
@@ -41,10 +44,16 @@ public class PrimeFile extends AbstractList<BufferedSequence> implements Sequenc
         this.file = file;
     }
 
+    @Override
     public int size() {
         return file.size();
     }
 
+    public long limit() {
+        return ByteSequence.SIZE * file.size();
+    }
+
+    @Override
     public BufferedSequence get(int i) {
         if(i<sequences.size())
             return sequences.get(i);

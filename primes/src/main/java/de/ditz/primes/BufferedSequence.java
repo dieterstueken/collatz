@@ -1,7 +1,8 @@
 package de.ditz.primes;
 
 import java.nio.ByteBuffer;
-import java.util.*;
+import java.util.AbstractList;
+import java.util.RandomAccess;
 import java.util.function.LongFunction;
 
 /**
@@ -12,7 +13,7 @@ import java.util.function.LongFunction;
  */
 public class BufferedSequence extends AbstractList<ByteSequence> implements RandomAccess, Sequence {
 
-    protected final ByteBuffer buffer;
+    final ByteBuffer buffer;
 
     public BufferedSequence(ByteBuffer buffer) {
         this.buffer = buffer;
@@ -51,31 +52,42 @@ public class BufferedSequence extends AbstractList<ByteSequence> implements Rand
 
         for(long i = ByteSequence.count(base - start); result==null && i<buffer.capacity(); ++i) {
             int m = 0xff & buffer.get((int)i);
-            ByteSequence s = Sequences.sequence(m);
-            result = s.process(start, process, base+(long) ByteSequence.SIZE*i);
+            ByteSequence sequence = Sequences.sequence(m);
+            result = sequence.process(start, process, base + i*ByteSequence.SIZE);
         }
 
         return result;
     }
 
-    public boolean drop(long index) {
+    /**
+     * Drop some number from the sequence.
+     * @param number to drop.
+     * @return true if the number was dropped.
+     */
+    public boolean drop(long number) {
 
-        if(index>0) {
-            long pos = ByteSequence.count(index);
+        if(number>0) {
+            long pos = ByteSequence.count(number);
             if (pos < buffer.capacity()) {
-                byte seq = buffer.get((int) pos);
-                int dropped = ByteSequence.expunge(0xff&seq,index % ByteSequence.SIZE);
+                int seq = 0xff&buffer.get((int) pos);
+                long rem = number % ByteSequence.SIZE;
+                int dropped = ByteSequence.expunge(seq, rem);
+
+                System.out.format("%5d = %3d + %3d %02x -> %02x %s\n",
+                        number, pos, rem, seq, dropped, dropped == seq ? "!" : "");
+
                 if (dropped != seq) {
                     buffer.put((int) pos, (byte)dropped);
                     return true;
-                }
+                } else
+                    return false;
             }
         }
 
         return false;
     }
 
-    public static BufferedSequence build(long limit) {
+    public static BufferedSequence build(long until) {
 
         return Sequences.ROOT.process(7, new LongFunction<BufferedSequence>() {
 
@@ -89,7 +101,7 @@ public class BufferedSequence extends AbstractList<ByteSequence> implements Rand
             @Override
             public BufferedSequence apply(long factor) {
 
-                if(factor>limit)
+                if(factor>until)
                     return current;
 
                 // compose a new buffer of factor * capacity of current buffer
@@ -106,9 +118,9 @@ public class BufferedSequence extends AbstractList<ByteSequence> implements Rand
 
                 BufferedSequence next = new BufferedSequence(buffer);
 
-                current = new Sieve(next, factor).sieve(next, 0);
+                current = new Sieve(next, factor, cap*ByteSequence.SIZE).sieve(next, 0);
 
-                if(factor < limit)
+                if(factor < until)
                     return null;
                 else
                     return current;
@@ -117,7 +129,7 @@ public class BufferedSequence extends AbstractList<ByteSequence> implements Rand
     }
 
     public static void main(String ... args) {
-        BufferedSequence sequence = build(7);
+        BufferedSequence sequence = build(13);
 
         System.out.format("%,d %,d\n", sequence.limit(), sequence.count());
 

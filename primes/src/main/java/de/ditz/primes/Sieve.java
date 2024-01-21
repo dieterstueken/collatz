@@ -12,9 +12,12 @@ public class Sieve {
 
     final long start;
 
-    public Sieve(Sequence primes, long start) {
+    final long prod;
+
+    public Sieve(Sequence primes, long start, long prod) {
         this.primes = primes;
         this.start = start;
+        this.prod = prod;
     }
 
     public BufferedSequence sieve(BufferedSequence sequence, long offset) {
@@ -22,7 +25,7 @@ public class Sieve {
         final long limit = sequence.limit() + offset;
 
         BufferedSequence result = primes.process(start, p0 -> {
-            long skip = offset / p0;
+            long skip = 1 + Math.max(offset, prod) / p0;
             if(skip<p0)
                 skip = p0;
 
@@ -35,12 +38,6 @@ public class Sieve {
                     return sequence;
 
                 boolean dropped = sequence.drop(product - offset);
-
-                if(!dropped) {
-                    sequence.drop(product - offset);
-                }
-
-                System.out.format("%2d x %2d = %3d %s\n", p0, p1, product, dropped ? "!":"");
 
                 if(dropped)
                     return null;

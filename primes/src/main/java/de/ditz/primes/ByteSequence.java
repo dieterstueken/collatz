@@ -1,7 +1,9 @@
 package de.ditz.primes;
 
 
-import java.util.*;
+import java.util.AbstractList;
+import java.util.List;
+import java.util.RandomAccess;
 import java.util.function.LongFunction;
 
 /*
@@ -11,7 +13,7 @@ import java.util.function.LongFunction;
  */
 abstract public class ByteSequence extends AbstractList<Integer> implements RandomAccess, Sequence {
 
-   public static int SIZE = 2*3*5;
+   public static long SIZE = 2*3*5;
 
    public static final List<Integer> FACTORS = List.of(1,7,11,13,17,19,23,29);
 
@@ -19,8 +21,17 @@ abstract public class ByteSequence extends AbstractList<Integer> implements Rand
 
    final long prod;
 
+   String asString;
+
    protected ByteSequence(long prod) {
       this.prod = prod;
+   }
+
+   @Override
+   public String toString() {
+      if(asString==null)
+         asString = asString();
+      return asString;
    }
 
    /**
@@ -82,7 +93,7 @@ abstract public class ByteSequence extends AbstractList<Integer> implements Rand
     * @return the index of the byte sequence.
     */
    public static long count(long offset) {
-      return offset<0 ? 0 : offset/ SIZE;
+      return offset<0 ? 0 : offset/SIZE;
    }
 
    /**
@@ -114,8 +125,8 @@ abstract public class ByteSequence extends AbstractList<Integer> implements Rand
     */
    public static int expunge(int mask, long factor) {
 
-      if(factor<=7) {
-         if(mask>1 && mask%2!=0) // drop 1
+      if(factor<7) {
+         if(factor>0 && mask%2!=0) // drop 1
             mask &= 0xfe;
       } else if(factor<30) {
          // bit # to drop
@@ -129,6 +140,18 @@ abstract public class ByteSequence extends AbstractList<Integer> implements Rand
       }
 
       return mask;
+   }
+
+   protected String asString() {
+      StringBuilder sb = new StringBuilder();
+      sb.append("%02x".formatted(mask()));
+      char c='[';
+      for(int i=0; i<size(); ++i) {
+           sb.append(c).append(get(size()-i-1));
+           c = '*';
+      }
+      sb.append(']');
+      return sb.toString();
    }
    
    public static void main(String ... args) {
