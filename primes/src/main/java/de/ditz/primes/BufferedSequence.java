@@ -1,6 +1,7 @@
 package de.ditz.primes;
 
 import java.nio.ByteBuffer;
+import java.nio.LongBuffer;
 import java.util.AbstractList;
 import java.util.RandomAccess;
 import java.util.function.LongFunction;
@@ -15,16 +16,30 @@ public class BufferedSequence extends AbstractList<ByteSequence> implements Rand
 
     final ByteBuffer buffer;
 
-    final long offset;
+    // byte offset.
+    final long base;
 
-    public BufferedSequence(long offset, ByteBuffer buffer) {
+    public BufferedSequence(long base, ByteBuffer buffer) {
         this.buffer = buffer;
-        this.offset = offset;
+        this.base = base;
     }
 
     public BufferedSequence(long offset, int size) {
         this.buffer = ByteBuffer.allocateDirect(size);
-        this.offset = offset;
+        this.base = offset;
+    }
+
+
+    public BufferedSequence init() {
+        LongBuffer lb = buffer.asLongBuffer();
+        int size = buffer.capacity();
+        for(int i=0; i<size/8; ++i)
+            lb.put(-1L);
+
+        for(int i=8*lb.capacity(); i<size; ++i)
+            buffer.put(i, (byte)0xff);
+
+       return this;
     }
 
     public ByteBuffer getBuffer() {
@@ -41,8 +56,12 @@ public class BufferedSequence extends AbstractList<ByteSequence> implements Rand
         return buffer.capacity();
     }
 
+    public long offset() {
+        return ByteSequence.SIZE * base;
+    }
+
     public long limit() {
-        return offset + ByteSequence.SIZE * buffer.capacity();
+        return ByteSequence.SIZE * (base + buffer.capacity());
     }
 
     public long count() {
@@ -55,8 +74,10 @@ public class BufferedSequence extends AbstractList<ByteSequence> implements Rand
         if(start>=limit())
             return null;
 
-        if(start<offset)
-            start=offset;
+        long offset = offset();
+
+        if(start/ByteSequence.SIZE<offset)
+            start=offset*ByteSequence.SIZE;
 
         R result = null;
 
@@ -88,41 +109,49 @@ public class BufferedSequence extends AbstractList<ByteSequence> implements Rand
      * @param number to drop.
      * @return true if the number was dropped.
      */
-    public boolean drop(long number) {
+    public boolean drop(final long number) {
 
-        number -= offset;
+        long pos = ByteSequence.count(number) - base;
 
-        if(number>0) {
-            long pos = ByteSequence.count(number);
-            if (pos < buffer.capacity()) {
-                int seq = 0xff&buffer.get((int) pos);
-                long rem = number % ByteSequence.SIZE;
-                int dropped = ByteSequence.expunge(seq, rem);
+        if(pos>=0 && pos<buffer.capacity()) {
+            int seq = 0xff&buffer.get((int) pos);
+            long rem = number % ByteSequence.SIZE;
+            int dropped = ByteSequence.expunge(seq, rem);
 
-                System.out.format("%5d = %3d + %3d %02x -> %02x %s\n",
-                        number, pos, rem, seq, dropped, dropped == seq ? "!" : "");
+            // System.out.format("%5d = %2d+%d @ %2d  %02x -> %02x %s\n",
+            // number, base, pos, rem, seq, dropped, dropped == seq ? "!" : "");
 
-                if (dropped != seq) {
-                    buffer.put((int) pos, (byte)dropped);
-                    return true;
-                } else
-                    return false;
+            if (dropped != seq) {
+                buffer.put((int) pos, (byte)dropped);
+                return true;
             }
+
         }
 
         return false;
     }
 
-    BufferedSequence sieve(Sequence primes, long start) {
-        return sieve(primes, start, this.offset);
+    /**
+     * Slice current buffer.
+     * @param start offset in bytes.
+     * @param size in bytes.
+     * @return a sliced buffer.
+     */
+    public BufferedSequence slice(int start, int size) {
+        if(start < base)
+            throw new IllegalArgumentException();
+
+        start -= base;
+        ByteBuffer slice = buffer.slice(start, size);
+        return new BufferedSequence(base+start, slice);
     }
 
-    BufferedSequence sieve(Sequence primes, long start, long offset) {
+    BufferedSequence sieve(Sequence primes, long start) {
 
         long limit = limit();
 
         BufferedSequence result = primes.process(start, p0 -> {
-            long skip = 1 + offset / p0;
+            long skip = (offset() + p0-1) / p0;
             if (skip < p0)
                 skip = p0;
 
@@ -147,52 +176,5 @@ public class BufferedSequence extends AbstractList<ByteSequence> implements Rand
             throw new IllegalStateException("primes under run");
 
         return result;
-    }
-
-    public static BufferedSequence build(long until) {
-
-        return Sequences.ROOT.process(7, new LongFunction<>() {
-
-            BufferedSequence current;
-
-            {
-                current = new BufferedSequence(0, 1);
-                current.buffer.put(0, Sequences.ROOT.getByte());
-            }
-
-            @Override
-            public BufferedSequence apply(long factor) {
-
-                if(factor>until)
-                    return current;
-
-                // compose a new buffer of factor * capacity of current buffer
-                int cap = current.buffer.capacity();
-                long product = factor * cap;
-
-                if(product>Integer.MAX_VALUE)
-                    throw new IndexOutOfBoundsException();
-
-                ByteBuffer buffer = ByteBuffer.allocateDirect((int) product);
-                for (int i = 0; i < factor; ++i) {
-                    buffer.put(i * cap, current.buffer, 0, cap);
-                }
-
-                current = new BufferedSequence(0, buffer).sieve(current, factor, cap*ByteSequence.SIZE);
-
-                if(factor < until)
-                    return null;
-                else
-                    return current;
-            }
-        });
-    }
-
-    public static void main(String ... args) {
-        BufferedSequence sequence = build(11);
-
-        System.out.format("%,d %,d\n", sequence.limit(), sequence.count());
-
-        //sequence.process(Sequence.all(System.out::println));
     }
 }

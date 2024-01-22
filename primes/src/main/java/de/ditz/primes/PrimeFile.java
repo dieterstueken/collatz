@@ -22,7 +22,7 @@ public class PrimeFile extends AbstractList<BufferedSequence> implements Sequenc
      * Block size in bytes.
      * A single byte of compacted primes represents 2*3*5=30 numbers.
      */
-    public static final int BLOCK = 7*11*13*17;
+    public static final int BLOCK = 1<<16;
 
     public static PrimeFile create(File file) throws IOException {
         return new PrimeFile(BufferedFile.create(file.toPath(), BLOCK));
@@ -46,7 +46,11 @@ public class PrimeFile extends AbstractList<BufferedSequence> implements Sequenc
 
     @Override
     public int size() {
-        return file.size();
+        int size = file.size();
+        if(size==0)
+            return file.block*sequences.size();
+
+        return size;
     }
 
     public long limit() {
@@ -134,5 +138,35 @@ public class PrimeFile extends AbstractList<BufferedSequence> implements Sequenc
         }
 
         file.write(buffer);
+    }
+
+    void grow() {
+        int base = file.size();
+        BufferedSequence block = new BufferedSequence(base, BLOCK).init();
+
+        if(base==0) {
+            sequences.clear();
+            sequences.add(block);
+        }
+
+        block.sieve(this, 7);
+
+        if(base!=0) {
+            write(block);
+        } else {
+            sequences.clear();
+        }
+    }
+
+    public long count() {
+        return stream().mapToLong(BufferedSequence::count).sum();
+    }
+
+    public static void main(String ... args) throws IOException {
+        PrimeFile primes = PrimeFile.create(new File("primes.dat"));
+
+        primes.grow();
+
+        System.out.format("%,d %,d\n", primes.limit(), primes.count());
     }
 }
