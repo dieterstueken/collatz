@@ -22,18 +22,22 @@ public class PrimeFile extends AbstractList<BufferedSequence> implements Sequenc
      * Block size in bytes.
      * A single byte of compacted primes represents 2*3*5=30 numbers.
      */
+
     public static final int BLOCK = 1<<16;
 
-    public static PrimeFile create(File file) throws IOException {
-        return new PrimeFile(BufferedFile.create(file.toPath(), BLOCK));
+    public static PrimeFile create(File file, int block) throws IOException {
+        return new PrimeFile(BufferedFile.create(file.toPath(), block));
     }
 
-    public static PrimeFile append(File file) throws IOException {
-        return new PrimeFile(BufferedFile.append(file.toPath(), BLOCK));
+    public static PrimeFile append(File file, int block) throws IOException {
+        return new PrimeFile(BufferedFile.append(file.toPath(), block));
     }
 
     public static PrimeFile open(File file) throws IOException {
-        return new PrimeFile(BufferedFile.open(file.toPath(), BLOCK));
+        return open(file, BLOCK);
+    }
+    public static PrimeFile open(File file, int block) throws IOException {
+        return new PrimeFile(BufferedFile.open(file.toPath(), block));
     }
 
     final BufferedFile file;
@@ -46,15 +50,11 @@ public class PrimeFile extends AbstractList<BufferedSequence> implements Sequenc
 
     @Override
     public int size() {
-        int size = file.size();
-        if(size==0)
-            return file.block*sequences.size();
-
-        return size;
+        return file.size();
     }
 
     public long limit() {
-        return ByteSequence.SIZE * file.size();
+        return ByteSequence.SIZE * file.length();
     }
 
     @Override
@@ -69,7 +69,7 @@ public class PrimeFile extends AbstractList<BufferedSequence> implements Sequenc
             BufferedSequence sequence = null;
 
             for(int k=sequences.size(); k<=i; ++k) {
-                long offset = i*BLOCK*ByteSequence.SIZE;
+                long offset = i*file.block*ByteSequence.SIZE;
                 sequence = new BufferedSequence(offset, file.get(k));
                 if(sequence.buffer.capacity()==file.blockSize())
                     sequences.add(sequence);
@@ -97,7 +97,7 @@ public class PrimeFile extends AbstractList<BufferedSequence> implements Sequenc
     @Override
     public <R> R process(long start, LongFunction<? extends R> process) {
 
-        final long block = BLOCK*ByteSequence.SIZE;
+        final long block = file.block*ByteSequence.SIZE;
 
         if(start>block*size())
             return null;
@@ -142,20 +142,14 @@ public class PrimeFile extends AbstractList<BufferedSequence> implements Sequenc
 
     void grow() {
         int base = file.size();
-        BufferedSequence block = new BufferedSequence(base, BLOCK).init();
+        BufferedSequence block = new BufferedSequence(base, file.block).init();
 
-        if(base==0) {
-            sequences.clear();
-            sequences.add(block);
-        }
+        if(base==0)
+            block.sieve(block, 7);
+        else
+            block.sieve(this, 7);
 
-        block.sieve(this, 7);
-
-        if(base!=0) {
-            write(block);
-        } else {
-            sequences.clear();
-        }
+        write(block);
     }
 
     public long count() {
@@ -163,10 +157,13 @@ public class PrimeFile extends AbstractList<BufferedSequence> implements Sequenc
     }
 
     public static void main(String ... args) throws IOException {
-        PrimeFile primes = PrimeFile.create(new File("primes.dat"));
+        
+        try(PrimeFile primes = PrimeFile.create(new File("primes.dat"), 2*7)) {
+            primes.grow();
 
-        primes.grow();
+            System.out.format("%,d %,d\n", primes.limit(), primes.count());
 
-        System.out.format("%,d %,d\n", primes.limit(), primes.count());
+            primes.process(Sequence.all(System.out::println));
+        }
     }
 }
