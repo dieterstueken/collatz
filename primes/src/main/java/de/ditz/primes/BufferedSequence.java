@@ -2,9 +2,7 @@ package de.ditz.primes;
 
 import java.nio.ByteBuffer;
 import java.nio.LongBuffer;
-import java.util.AbstractList;
-import java.util.RandomAccess;
-import java.util.function.LongFunction;
+import java.util.*;
 
 /**
  * Created by IntelliJ IDEA.
@@ -69,7 +67,7 @@ public class BufferedSequence extends AbstractList<ByteSequence> implements Rand
     }
 
     @Override
-    public <R> R process(long start, LongFunction<? extends R> process) {
+    public <R> R process(long start, Target<? extends R> process) {
 
         if(start>=limit())
             return null;

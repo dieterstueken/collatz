@@ -1,10 +1,7 @@
 package de.ditz.primes;
 
 
-import java.util.AbstractList;
-import java.util.List;
-import java.util.RandomAccess;
-import java.util.function.LongFunction;
+import java.util.*;
 
 /*
  * Class CompactSequence contains a block of up to 8 numbers below 30=2*3*5
@@ -79,9 +76,9 @@ abstract public class ByteSequence extends AbstractList<Integer> implements Rand
     */
    abstract public ByteSequence expunge(long factor);
 
-   abstract public <R> R process(long start, LongFunction<? extends R> process, long offset);
+   abstract public <R> R process(long start, Target<? extends R> process, long offset);
 
-   public <R> R process(LongFunction<? extends R> process, long offset) {
+   public <R> R process(Target<? extends R> process, long offset) {
       return process(0, process, offset);
    }
 

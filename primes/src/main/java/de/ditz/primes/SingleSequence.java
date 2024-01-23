@@ -1,9 +1,6 @@
 package de.ditz.primes;
 
-import java.util.AbstractList;
-import java.util.List;
-import java.util.RandomAccess;
-import java.util.function.LongFunction;
+import java.util.*;
 
 public class SingleSequence extends ByteSequence {
 
@@ -61,22 +58,22 @@ public class SingleSequence extends ByteSequence {
    }
 
    @Override
-   public <R> R process(long start, LongFunction<? extends R> process, long offset) {
+   public <R> R process(long start, Target<? extends R> process, long offset) {
       return start+offset>factor ? null : process.apply(factor+offset);
    }
 
    @Override
-   public <R> R process(long start, LongFunction<? extends R> process) {
+   public <R> R process(long start, Target<? extends R> process) {
       return start>factor ? null : process.apply(factor);
    }
 
    @Override
-   public <R> R process(LongFunction<? extends R> process, long offset) {
+   public <R> R process(Target<? extends R> process, long offset) {
       return process.apply(factor+offset);
    }
 
    @Override
-   public <R> R process(LongFunction<? extends R> process) {
+   public <R> R process(Target<? extends R> process) {
       return process.apply(factor);
    }
 

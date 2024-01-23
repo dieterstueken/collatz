@@ -3,11 +3,7 @@ package de.ditz.primes;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.AbstractList;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.RandomAccess;
-import java.util.function.LongFunction;
+import java.util.*;
 
 /**
  * version:     $
@@ -95,7 +91,7 @@ public class PrimeFile extends AbstractList<BufferedSequence> implements Sequenc
      * @return true if stopped by condition
      */
     @Override
-    public <R> R process(long start, LongFunction<? extends R> process) {
+    public <R> R process(long start, Target<? extends R> process) {
 
         final long block = file.block*ByteSequence.SIZE;
 
@@ -163,7 +159,7 @@ public class PrimeFile extends AbstractList<BufferedSequence> implements Sequenc
 
             System.out.format("%,d %,d\n", primes.limit(), primes.count());
 
-            primes.process(Sequence.all(System.out::println));
+            primes.process(Target.all(System.out::println));
         }
     }
 }

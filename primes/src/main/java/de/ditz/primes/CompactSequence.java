@@ -1,7 +1,5 @@
 package de.ditz.primes;
 
-import java.util.function.LongFunction;
-
 /**
  * Created by IntelliJ IDEA.
  * User: stueken
@@ -61,17 +59,17 @@ abstract public class CompactSequence extends ByteSequence {
         return (int) factor;
     }
     @Override
-    public <R> R process(long start, LongFunction<? extends R> process) {
+    public <R> R process(long start, Target<? extends R> process) {
         return from(start).process(process, 0);
     }
 
     @Override
-    public <R> R process(long start, LongFunction<? extends R> process, long offset) {
+    public <R> R process(long start, Target<? extends R> process, long offset) {
         return from(start-offset).process(process, offset);
     }
 
     @Override
-    public <R> R process(LongFunction<? extends R> process, long offset) {
+    public <R> R process(Target<? extends R> process, long offset) {
         R result = null;
 
         // drop mask

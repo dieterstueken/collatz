@@ -1,9 +1,5 @@
 package de.ditz.primes;
 
-import java.util.function.LongConsumer;
-import java.util.function.LongFunction;
-import java.util.function.LongPredicate;
-
 /**
  * Created by IntelliJ IDEA.
  * User: stueken
@@ -19,25 +15,9 @@ public interface Sequence {
      * @param process to generate a result to stop the processing.
      * @return R result if the processor or null if the stream run to its end.
      */
-    <R> R process(long start, LongFunction<? extends R> process);
+    <R> R process(long start, Target<? extends R> process);
 
-    default <R> R process(LongFunction<? extends R> process) {
+    default <R> R process(Target<? extends R> process) {
         return process(0, process);
-    }
-
-    static LongFunction<Boolean> until(LongPredicate process) {
-        return p -> process.test(p) ? true : null;
-    }
-
-    static LongFunction<Boolean> all(LongConsumer process) {
-        return p -> {process.accept(p); return null;};
-    }
-
-    static <R> LongFunction<R> shift(LongFunction<R> process, long offset) {
-        return offset==0 ? process : p -> process.apply(p+offset);
-    }
-
-    static <R> LongFunction<R> from(LongFunction<R> process, long start) {
-        return start<0 ? process : p -> p<start ? null : process.apply(p);
     }
 }
