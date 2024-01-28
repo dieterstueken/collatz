@@ -1,8 +1,7 @@
 package de.ditz.primes;
 
 import java.nio.ByteBuffer;
-import java.nio.LongBuffer;
-import java.util.List;
+import java.util.*;
 
 /**
  * Created by IntelliJ IDEA.
@@ -35,22 +34,9 @@ public class BufferedSequence implements Sequence {
         this.base = base;
     }
 
-    public BufferedSequence(long offset, int size) {
+    public BufferedSequence(long base, int size) {
         this.buffer = ByteBuffer.allocateDirect(size);
-        this.base = offset;
-    }
-
-
-    public BufferedSequence init() {
-        LongBuffer lb = buffer.asLongBuffer();
-        int size = buffer.capacity();
-        for(int i=0; i<size/8; ++i)
-            lb.put(-1L);
-
-        for(int i=8*lb.capacity(); i<size; ++i)
-            buffer.put(i, (byte)0xff);
-
-       return this;
+        this.base = base;
     }
 
     public ByteBuffer getBuffer() {
@@ -78,12 +64,12 @@ public class BufferedSequence implements Sequence {
     }
 
     @Override
-    public <R> R process(final long start, Target<? extends R> process) {
+    public <R> R process(final long start, Target<? extends R> target) {
 
         long offset = offset();
 
         // find bytes to skip.
-        int n = (int)((start-offset)/ByteSequence.SIZE);
+        int n = (int)(Math.max(start, offset)/ByteSequence.SIZE);
         offset += n*ByteSequence.SIZE;
 
         R result = null;
@@ -92,7 +78,7 @@ public class BufferedSequence implements Sequence {
         if(start>offset && n<buffer.capacity()) {
             int m = 0xff & buffer.get(n++);
             ByteSequence sequence = Sequences.sequence(m);
-            result = sequence.process(start, process, offset);
+            result = sequence.process(start, target, offset);
             offset += ByteSequence.SIZE;
         }
 
@@ -100,7 +86,7 @@ public class BufferedSequence implements Sequence {
         while(result == null && n<buffer.capacity()) {
             int m = 0xff & buffer.get(n++);
             ByteSequence sequence = Sequences.sequence(m);
-            result = sequence.process(process, offset);
+            result = sequence.process(target, offset);
             offset += ByteSequence.SIZE;
         }
 
@@ -113,20 +99,20 @@ public class BufferedSequence implements Sequence {
      * @return this if the factor is beyond the limit.
      */
     public BufferedSequence drop(final long factor) {
-
         long pos = ByteSequence.count(factor) - base;
 
         if(pos>=0) {
             if(pos<capacity()) {
                 int seq = 0xff & buffer.get((int) pos);
                 long rem = factor % ByteSequence.SIZE;
-                int dropped = ByteSequence.expunge(seq, rem);
+                int dropped = CompactSequence.expunge(seq, rem);
 
                 if (dropped != seq) {
                     buffer.put((int) pos, (byte) dropped);
                 } else {
                     System.out.format("%5d = %2d * 30 + %2d %02x -> %02x %s\n",
                             factor, pos, rem, seq, dropped, dropped == seq ? "!" : "");
+                    return null;
                 }
             } else {
                 // done
@@ -136,6 +122,23 @@ public class BufferedSequence implements Sequence {
 
         // continue
         return null;
+    }
+
+    public long[] stat(long[] stat) {
+        int cap = buffer.capacity();
+        int l = stat.length;
+        for(int i=0; i<cap; ++i) {
+            int seq = 0xff & buffer.get((int) i);
+            int n = Sequences.sequence(seq).size();
+            if(n<l)
+                ++stat[n];
+        }
+
+        return stat;
+    }
+
+    public long[] stat() {
+        return stat(new long[8]);
     }
 
     protected class Sieve implements Target<BufferedSequence> {
@@ -160,7 +163,7 @@ public class BufferedSequence implements Sequence {
             if (factor * prime < limit) {
 
                 target.reset(prime);
-                primes.process(factor, target);
+                primes.process(factor+1, target);
 
                 // continue with larger primes
                 return null;
@@ -211,25 +214,29 @@ public class BufferedSequence implements Sequence {
      * @return a virtual List of Buffered slices.
      */
     public List<BufferedSequence> slices(int length) {
+        return new Slices(length);
+    }
 
-        if(length<1)
-            throw new IllegalArgumentException("invalid buffer length");
+    protected class Slices extends RandomList<BufferedSequence> {
 
-        return new RandomList<>() {
+        final int length;
 
-            final int size = capacity() / length;
+        protected Slices(int length) {
+            this.length = length;
+            if(length<1)
+                throw new IllegalArgumentException("invalid buffer length");
+        }
 
-            @Override
-            public BufferedSequence get(int index) {
-                int start = index*length;
-                int capacity = Math.min(length, capacity()-start);
-                return slice(start, length);
-            }
+        @Override
+        public BufferedSequence get(int index) {
+            int start = index*length;
+            int capacity = Math.min(length, capacity()-start);
+            return slice(start, length);
+        }
 
-            @Override
-            public int size() {
-                return size;
-            }
-        };
+        @Override
+        public int size() {
+            return capacity() / length;
+        }
     }
 }

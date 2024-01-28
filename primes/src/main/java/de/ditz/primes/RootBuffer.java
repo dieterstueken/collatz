@@ -1,5 +1,7 @@
 package de.ditz.primes;
 
+import java.util.*;
+
 /**
  * A RootBuffer is a template containing no numbers which are a multiple of factor.
  * Thus, the primes <= number are missing, but it contains a 1.
@@ -7,24 +9,72 @@ package de.ditz.primes;
  */
 public class RootBuffer extends BufferedSequence {
 
-    final int root;
+    final RootBuffer root;
 
-    RootBuffer(int size, int root) {
-        super(0, size);
-        this.root = root;
-    }
+    final int prime;
+
+    final List<BufferedSequence> buffers;
 
     RootBuffer() {
-        this(1, 5);
-        buffer.put(0, ByteSequence.ROOT);
+        super(0, 1);
+        buffer.put(0, (byte)ByteSequence.ROOT);
+        this.root = null;
+        this.prime = 5;
+        buffers = Collections.emptyList();
+    }
+
+    RootBuffer(RootBuffer root, int prime) {
+        super(0, prime * root.capacity());
+        this.root = root;
+        this.prime = prime;
+
+        root.fill(this);
+
+        // drop all higher multiples of grown PrimeBuffers root.
+        root.process(this::dropRoots);
+
+        buffers = new Slices(root.capacity());
+    }
+
+    @Override
+    public String toString() {
+        return String.format("RootBuffer{%d:%d:%d}", prime, buffer.capacity(), this.limit());
     }
 
     RootBuffer grow() {
-        return process(root +1, this::grow);
+        return process(prime +1, this::grow);
     }
 
     RootBuffer grow(long prime) {
         return grow((int)prime);
+    }
+
+    /**
+     * Fill up a target buffer from this root sequence.
+     * The target buffer may be smaller or bigger than this and my have some odd offset.
+     * @return the target buffer again.
+     */
+    public BufferedSequence fill(BufferedSequence target) {
+
+        // start at this.buffer's position
+        int pos = (int)(target.base % this.capacity());
+
+        // fill the first partial part from this.buffer@pos
+        if(pos!=0) {
+            int length = Math.min(this.capacity()-pos, target.capacity());
+            target.buffer.put(0, this.buffer, pos, length);
+            // switch to target.buffer's position
+            pos = length;
+        }
+
+        // fill the remaining part from repeating this.buffer
+        while(pos<target.capacity()) {
+            int length = Math.min(this.capacity(), target.capacity()-pos);
+            target.buffer.put(pos, this.buffer, 0, length);
+            pos += length;
+        }
+
+        return target;
     }
 
     /**
@@ -33,17 +83,7 @@ public class RootBuffer extends BufferedSequence {
      * @return a grown PrimeBuffer.
      */
     RootBuffer grow(int next) {
-        int capacity = this.capacity();
-        RootBuffer grown = new RootBuffer(next * capacity, next);
-
-        for (BufferedSequence slice:grown.slices(capacity)) {
-            slice.buffer.put(0, this.buffer, 0, capacity);
-        }
-
-        // drop all higher multiples of grown PrimeBuffer including next itself.
-        this.process(grown::pdrop);
-
-        return grown;
+        return new RootBuffer(this, next);
     }
 
     /**
@@ -51,8 +91,8 @@ public class RootBuffer extends BufferedSequence {
      * @param factor to apply.
      * @return this, if we are done or null to continue.
      */
-    private RootBuffer pdrop(long factor) {
-        long product = factor * this.root;
+    private RootBuffer dropRoots(long factor) {
+        long product = factor * this.prime;
 
         if(product<limit()) {
             drop(product);
@@ -66,20 +106,21 @@ public class RootBuffer extends BufferedSequence {
 
         RootBuffer result = new RootBuffer();
 
-        while (result.root < limit) {
+        while (result.prime < limit) {
             result = result.grow();
-            System.out.format("%d: %,d %,d\n", result.root, result.limit(), result.count());
+
         }
 
         return result;
     }
 
     public static void main(String ... args) {
-        RootBuffer buffer = build(11);
+        RootBuffer result = build(19);
 
-        buffer.sieve(buffer, buffer.root +1);
-        System.out.format("%d: %,d %,d\n", buffer.root, buffer.limit(), buffer.count());
+        System.out.format("%d: %,d %,d %,d %.1f\n",
+                result.prime, result.capacity(), result.limit(), result.count(),
+                1.0 * result.limit() / result.count());
 
-        buffer.process(Target.all(System.out::println));
+        //buffer.process(Target.all(System.out::println));
     }
 }

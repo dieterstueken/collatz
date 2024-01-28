@@ -6,10 +6,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.AbstractList;
-import java.util.EnumSet;
-import java.util.RandomAccess;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created by IntelliJ IDEA.
@@ -50,7 +47,7 @@ public class BufferedFile extends AbstractList<ByteBuffer> implements RandomAcce
 
     @Override
     public int size() {
-        return (int)((this.length + blockSize() - 1) / blockSize());
+        return (int)(this.length / blockSize());
     }
 
     @Override

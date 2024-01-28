@@ -12,10 +12,10 @@ public interface Sequence {
      * Feed all numbers through a processor until it returns a result.
      *
      * @param start to suppress all values < start.
-     * @param process to generate a result to stop the processing.
+     * @param target to generate a result to stop the processing.
      * @return R result if the processor or null if the stream run to its end.
      */
-    <R> R process(long start, Target<? extends R> process);
+    <R> R process(long start, Target<? extends R> target);
 
     default <R> R process(Target<? extends R> process) {
         return process(0, process);

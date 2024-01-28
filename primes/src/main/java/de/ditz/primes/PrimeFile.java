@@ -12,14 +12,14 @@ import java.util.*;
  * modified by: $
  * modified on: $
  */
-public class PrimeFile extends AbstractList<BufferedSequence> implements Sequence, RandomAccess, AutoCloseable {
+public class PrimeFile implements Sequence, AutoCloseable {
 
     /**
      * Block size in bytes.
      * A single byte of compacted primes represents 2*3*5=30 numbers.
      */
 
-    public static final int BLOCK = 1<<16;
+    public static final int BLOCK = 1<<15;
 
     public static PrimeFile create(File file, int block) throws IOException {
         return new PrimeFile(BufferedFile.create(file.toPath(), block));
@@ -38,42 +38,61 @@ public class PrimeFile extends AbstractList<BufferedSequence> implements Sequenc
 
     final BufferedFile file;
 
-    final List<BufferedSequence> sequences = new ArrayList<>();
+    final List<BufferedSequence> buffers = new AbstractList<> () {
+        final List<BufferedSequence> cached = new ArrayList();
+
+        @Override
+        public int size() {
+            return (int)((file.length + file.blockSize() - 1) / file.blockSize());
+        }
+
+        private BufferedSequence sequence(int index) {
+            long offset = index*file.block*ByteSequence.SIZE;
+            return new BufferedSequence(offset, file.get(index));
+        }
+
+        @Override
+        public BufferedSequence get(int i) {
+            BufferedSequence sequence = null;
+
+            if(i < cached.size()) {
+                sequence = cached.get(i);
+            } else {
+                synchronized (cached) {
+                    if (i < cached.size())
+                        sequence = cached.get(i);
+                    else {
+                        for (int k = cached.size(); k <= i; ++k) {
+                            sequence = sequence(k);
+                        }
+                    }
+                }
+            }
+
+            // verify partial sequences
+            if(sequence.capacity()<file.block && sequence.limit()<file.size()) {
+                // reload sequence after file grown
+                sequence = sequence(i);
+                cached.set(i, sequence);
+            }
+            
+            return sequence;
+        }
+    };
+
+    final RootBuffer root = RootBuffer.build(17);
 
     public PrimeFile(BufferedFile file) {
         this.file = file;
     }
 
-    @Override
+
     public int size() {
-        return file.size();
+        return buffers.size();
     }
 
     public long limit() {
         return ByteSequence.SIZE * file.length();
-    }
-
-    @Override
-    public BufferedSequence get(int i) {
-        if(i<sequences.size())
-            return sequences.get(i);
-
-        synchronized (sequences) {
-            if(i<sequences.size())
-                return sequences.get(i);
-
-            BufferedSequence sequence = null;
-
-            for(int k=sequences.size(); k<=i; ++k) {
-                long offset = i*file.block*ByteSequence.SIZE;
-                sequence = new BufferedSequence(offset, file.get(k));
-                if(sequence.buffer.capacity()==file.blockSize())
-                    sequences.add(sequence);
-            }
-
-            return sequence;
-        }
-
     }
 
     @Override
@@ -86,34 +105,38 @@ public class PrimeFile extends AbstractList<BufferedSequence> implements Sequenc
     }
 
     /**
-     * @param start
-     * @param process condition to top
-     * @return true if stopped by condition
+     * Emit primes to a target processor.
+     * The root block misses primes below 17, so the first block is substituted.
+     *
+     * @param start first prime to emit.
+     * @param target to preocess primes.
+     * @return a target result or null if exceeded.
      */
     @Override
-    public <R> R process(long start, Target<? extends R> process) {
+    public <R> R process(long start, Target<? extends R> target) {
+        R result = null;
+
+        // substitute root block
+        if(start<ByteSequence.SIZE) {
+            result = Sequences.PRIMES.process(start, target);
+            if(result!=null)
+                return result;
+
+            // continue after 29
+            start = 30;
+        }
+
+        if(start>limit())
+            return null;
 
         final long block = file.block*ByteSequence.SIZE;
 
-        if(start>block*size())
-            return null;
-
         // find blocks to skip.
-        int n = (int)(start/(block));
+        int n = (int)(start/block);
 
-        R result = null;
-
-        // process first block
-        start -= n*block;
-        if(start>0 && n<size()) {
-            BufferedSequence sequence = this.get(n++);
-            result = sequence.process(start, process);
-        }
-
-        // continue with remaining blocks
-        while(result == null && n<size()) {
-            BufferedSequence sequence = this.get(n++);
-            result = sequence.process(process);
+        while(result == null && n<buffers.size()) {
+            BufferedSequence sequence = buffers.get(n++);
+            result = sequence.process(start, target);
         }
 
         return result;
@@ -124,40 +147,43 @@ public class PrimeFile extends AbstractList<BufferedSequence> implements Sequenc
     }
 
     public void write(ByteBuffer buffer) {
-
-        int size = sequences.size();
-        long count = file.length / file.blockSize();
-
-        // truncate after last complete buffer
-        if(size>count) {
-            sequences.remove(--size);
-        }
-
         file.write(buffer);
     }
 
-    void grow() {
-        int base = file.size();
-        BufferedSequence block = new BufferedSequence(base, file.block).init();
+    BufferedSequence grow() {
+        long base = file.length();
 
-        if(base==0)
-            block.sieve(block, 7);
-        else
-            block.sieve(this, 7);
+        long len;
+
+        if(base==0) {
+            // else we miss 31*31
+            len = 8;
+        } else if(2*base<file.block) {
+            len = base;
+        } else {
+            len = file.block - base%file.block;
+        }
+
+        BufferedSequence block = new BufferedSequence(base, (int)len);
+        root.fill(block);
+        block.sieve(this, root.prime +1);
 
         write(block);
+
+        return block;
     }
 
     public long count() {
-        return stream().mapToLong(BufferedSequence::count).sum();
+        return buffers.stream().mapToLong(BufferedSequence::count).sum();
     }
 
     public static void main(String ... args) throws IOException {
         
-        try(PrimeFile primes = PrimeFile.create(new File("primes.dat"), 2*7)) {
-            primes.grow();
-
-            System.out.format("%,d %,d\n", primes.limit(), primes.count());
+        try(PrimeFile primes = PrimeFile.append(new File("primes.dat"), BLOCK)) {
+            while(primes.size()<4) {
+                primes.grow();
+                System.out.format("%,d %,d\n", primes.limit(), primes.count());
+            }
 
             primes.process(Target.all(System.out::println));
         }

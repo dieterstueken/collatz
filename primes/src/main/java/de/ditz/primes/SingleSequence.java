@@ -3,27 +3,19 @@ package de.ditz.primes;
 import java.util.AbstractList;
 import java.util.RandomAccess;
 
-public class SingleSequence extends ByteSequence {
+public class SingleSequence extends CompactSequence {
 
    public static final ByteSequence EMPTY = new EmptySequence();
 
    final Integer factor;
 
-   final int mask;
-
    protected SingleSequence(Integer factor, int mask) {
-      super(factor);
+      super(mask, factor);
       this.factor = factor;
-      this.mask = mask;
    }
 
    public int factor() {
       return factor;
-   }
-
-   @Override
-   public int mask() {
-      return mask;
    }
 
    @Override
@@ -57,8 +49,8 @@ public class SingleSequence extends ByteSequence {
    }
 
    @Override
-   public <R> R process(long start, Target<? extends R> process) {
-      return start>factor ? null : process.apply(factor);
+   public <R> R process(long start, Target<? extends R> target) {
+      return start>factor ? null : target.apply(factor);
    }
 
    @Override
@@ -92,20 +84,15 @@ public class SingleSequence extends ByteSequence {
       }
    }
 
-   static class EmptySequence extends ByteSequence {
+   static class EmptySequence extends CompactSequence {
 
       EmptySequence() {
-         super(0);
-      };
+         super(0, 0);
+      }
 
       @Override
       public String toString() {
          return "00[]";
-      }
-
-      @Override
-      public int mask() {
-         return 0;
       }
 
       /**
@@ -130,7 +117,7 @@ public class SingleSequence extends ByteSequence {
       }
 
       @Override
-      public <R> R process(long start, Target<? extends R> process) {
+      public <R> R process(long start, Target<? extends R> target) {
          return null;
       }
    }
