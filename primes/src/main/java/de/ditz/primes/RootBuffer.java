@@ -16,7 +16,7 @@ public class RootBuffer extends BufferedSequence {
 
     RootBuffer() {
         this(1, 5);
-        buffer.put(0, ByteSequence.ROOT);
+        buffer.put(0, (byte)ByteSequence.ROOT);
     }
 
     RootBuffer grow() {
@@ -28,20 +28,44 @@ public class RootBuffer extends BufferedSequence {
     }
 
     /**
+     * Fill up a target buffer from this root sequence.
+     * The target buffer may be smaller or bigger than this and my have some odd offset.
+     * @return the target buffer again.
+     */
+    public BufferedSequence fill(BufferedSequence target) {
+
+        // start position
+        int pos = (int)(target.base % this.capacity());
+
+        // fill the first part partially
+        if(pos!=0) {
+            int length = Math.min(this.capacity()-pos, target.capacity());
+            target.buffer.put(0, this.buffer, pos, length);
+        }
+
+        // fill the remaining part
+        while(pos<target.capacity()) {
+            int length = Math.min(this.capacity(), target.capacity() - pos);
+            target.buffer.put(pos, this.buffer, 0, length);
+            pos += this.capacity();
+        }
+
+        return target;
+    }
+
+    /**
      * Grop this buffer by the next prime.
      * @param next prime to grow by.
      * @return a grown PrimeBuffer.
      */
     RootBuffer grow(int next) {
         int capacity = this.capacity();
+
         RootBuffer grown = new RootBuffer(next * capacity, next);
+        fill(grown);
 
-        for (BufferedSequence slice:grown.slices(capacity)) {
-            slice.buffer.put(0, this.buffer, 0, capacity);
-        }
-
-        // drop all higher multiples of grown PrimeBuffer including next itself.
-        this.process(grown::pdrop);
+        // drop all higher multiples of grown PrimeBuffers root.
+        process(grown::dropRoots);
 
         return grown;
     }
@@ -51,7 +75,7 @@ public class RootBuffer extends BufferedSequence {
      * @param factor to apply.
      * @return this, if we are done or null to continue.
      */
-    private RootBuffer pdrop(long factor) {
+    private RootBuffer dropRoots(long factor) {
         long product = factor * this.root;
 
         if(product<limit()) {
@@ -68,18 +92,17 @@ public class RootBuffer extends BufferedSequence {
 
         while (result.root < limit) {
             result = result.grow();
-            System.out.format("%d: %,d %,d\n", result.root, result.limit(), result.count());
+            System.out.format("%d: %,d %,d %,d %.1f\n",
+                    result.root, result.capacity(), result.limit(), result.count(),
+                    1.0 * result.limit() / result.count());
         }
 
         return result;
     }
 
     public static void main(String ... args) {
-        RootBuffer buffer = build(11);
-
-        buffer.sieve(buffer, buffer.root +1);
-        System.out.format("%d: %,d %,d\n", buffer.root, buffer.limit(), buffer.count());
-
-        buffer.process(Target.all(System.out::println));
+        RootBuffer buffer = build(19);
+        
+        //buffer.process(Target.all(System.out::println));
     }
 }

@@ -4,19 +4,59 @@ import java.util.AbstractList;
 import java.util.List;
 import java.util.RandomAccess;
 
-class Sequences extends AbstractList<ByteSequence> implements RandomAccess {
+class Sequences extends AbstractList<CompactSequence> implements RandomAccess {
 
    public static final Sequences ALL = new Sequences();
 
-   public static ByteSequence sequence(int index) {
-      return ALL.get(index);
+   public static CompactSequence sequence(int index) {
+      return ALL.get(index&0xff);
    }
-   
-   final ByteSequence empty = new SingleSequence.EmptySequence();
+
+   public static ByteSequence root() {
+      return sequence(ByteSequence.ROOT);
+   }
+
+   /**
+    * Sequence of real prime numbers < 30
+    */
+   public static final ByteSequence PRIMES = new ByteSequence() {
+
+      final Integer[] factors = {2,3,5,7,13,17,19,23,29};
+
+      @Override
+      public int size() {
+         return factors.length;
+      }
+
+      @Override
+      public Integer get(int index) {
+         return factors[index];
+      }
+
+      @Override
+      public <R> R process(long start, Target<? extends R> target) {
+
+         if (start <= 5) {
+            for (int i = 0; i < 3; ++i) {
+               int p = factors[i];
+               if (p >= start) {
+                  R result = target.apply(2);
+                  if (result != null)
+                     return result;
+               }
+            }
+         }
+
+         // delegate to root sequence for p>5.
+         return root().process(start, target);
+      }
+   };
+
+   final CompactSequence empty = new SingleSequence.EmptySequence();
 
    final List<? extends SingleSequence> singles = new SingleSequence.Singles();
 
-   private final ByteSequence[] sequences = new ByteSequence[256];
+   private final CompactSequence[] sequences = new CompactSequence[256];
     
    {
       sequences[0] = empty;
@@ -36,30 +76,35 @@ class Sequences extends AbstractList<ByteSequence> implements RandomAccess {
    }
 
    @Override
-   public ByteSequence get(int index) {
+   public CompactSequence get(int index) {
       return sequences[index];
    }
 
 
    private CompactSequence create(int mask) {
       long sequence = 0;
-      long prod = 1;
 
       // reversed
       for(int i=7; i>=0; --i) {
          if(((mask>>i)&1) != 0) {
-            int p = ByteSequence.FACTORS.get(i);
+            int p = CompactSequence.FACTORS.get(i);
             sequence = (sequence<<8) + p;
-            prod *= p;
          }
       }
 
-      return new CompactSequence(mask, prod, sequence) {
+      return new CompactSequence(mask, sequence) {
+
+         final int size = Integer.bitCount(mask);
 
          @Override
          public ByteSequence expunge(long factor) {
-            int m = ByteSequence.expunge(mask, factor);
+            int m = CompactSequence.expunge(mask, factor);
             return m==mask ? this : sequences[m];
+         }
+
+         @Override
+         public int size() {
+            return size;
          }
 
          @Override

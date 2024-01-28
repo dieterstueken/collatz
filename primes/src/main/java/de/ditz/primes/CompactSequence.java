@@ -1,5 +1,7 @@
 package de.ditz.primes;
 
+import java.util.List;
+
 /**
  * Created by IntelliJ IDEA.
  * User: stueken
@@ -20,26 +22,73 @@ package de.ditz.primes;
  */
 abstract public class CompactSequence extends ByteSequence {
 
+    public static final List<Integer> FACTORS = List.of(1,7,11,13,17,19,23,29);
+
     final int mask;
 
     final long sequence;
 
-    int size;
+    String asString;
 
-    CompactSequence(int mask, long prod, long sequence) {
-        super(prod);
+    CompactSequence(int mask, long sequence) {
         this.sequence = sequence;
         this.mask = mask;
-        this.size = Integer.bitCount(mask);
+    }
+    @Override
+    public String toString() {
+        if(asString==null)
+            asString = asString();
+        return asString;
     }
 
-    @Override
-    public int size() {
-        return size;
+    protected String asString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("%02x".formatted(mask()));
+        char c='[';
+        for(int i=0; i<size(); ++i) {
+            sb.append(c).append(get(size()-i-1));
+            c = '*';
+        }
+        sb.append(']');
+        return sb.toString();
+    }
+
+    /**
+     * Drop a given factor [0,30] from a mask of factors.
+     * @param mask of the compact sequence.
+     * @param factor to drop.
+     * @return reduced prime factor mask.
+     */
+    public static int expunge(int mask, long factor) {
+
+       if(factor<7) {
+          if(factor>0 && mask%2!=0) // drop 1
+             mask &= 0xfe;
+       } else if(factor<30) {
+          // bit # to drop
+          int m = ByteSequence.pcount((int)factor) - 1;
+
+          // as bitmask
+          m = 1 << m;
+
+          // drop
+          mask &= ~m;
+       }
+
+       return mask;
     }
 
     public int mask() {
         return mask;
+    }
+
+    public byte getByte() {
+       return (byte) mask();
+    }
+
+    @Override
+    public Integer get(int index) {
+        return factor(index);
     }
 
     /**
@@ -58,10 +107,28 @@ abstract public class CompactSequence extends ByteSequence {
 
         return (int) factor;
     }
+
+    /**
+     * Return a sequence without the given factor.
+     * Return this sequence again if the sequence does not contain the given factor
+     * or the factor is not a prime at all.
+     *
+     * @param factor to expunge.
+     * @return a sequence without the given factor, or this.
+     */
+    abstract public ByteSequence expunge(long factor);
+
     @Override
-    public <R> R process(long start, Target<? extends R> process) {
-        return from(start).process(process, 0);
+    public <R> R process(long start, Target<? extends R> target) {
+        return from(start).process(target, 0);
     }
+
+    /**
+     * Return a truncated ByteSequence omitting all factors < start.
+     * @param start limit of first prime.
+     * @return a truncated ByteSequence.
+     */
+    abstract public ByteSequence from(long start);
 
     @Override
     public <R> R process(long start, Target<? extends R> process, long offset) {

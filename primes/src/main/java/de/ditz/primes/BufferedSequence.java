@@ -1,7 +1,6 @@
 package de.ditz.primes;
 
 import java.nio.ByteBuffer;
-import java.nio.LongBuffer;
 import java.util.List;
 
 /**
@@ -35,22 +34,9 @@ public class BufferedSequence implements Sequence {
         this.base = base;
     }
 
-    public BufferedSequence(long offset, int size) {
+    public BufferedSequence(long base, int size) {
         this.buffer = ByteBuffer.allocateDirect(size);
-        this.base = offset;
-    }
-
-
-    public BufferedSequence init() {
-        LongBuffer lb = buffer.asLongBuffer();
-        int size = buffer.capacity();
-        for(int i=0; i<size/8; ++i)
-            lb.put(-1L);
-
-        for(int i=8*lb.capacity(); i<size; ++i)
-            buffer.put(i, (byte)0xff);
-
-       return this;
+        this.base = base;
     }
 
     public ByteBuffer getBuffer() {
@@ -78,7 +64,7 @@ public class BufferedSequence implements Sequence {
     }
 
     @Override
-    public <R> R process(final long start, Target<? extends R> process) {
+    public <R> R process(final long start, Target<? extends R> target) {
 
         long offset = offset();
 
@@ -92,7 +78,7 @@ public class BufferedSequence implements Sequence {
         if(start>offset && n<buffer.capacity()) {
             int m = 0xff & buffer.get(n++);
             ByteSequence sequence = Sequences.sequence(m);
-            result = sequence.process(start, process, offset);
+            result = sequence.process(start, target, offset);
             offset += ByteSequence.SIZE;
         }
 
@@ -100,7 +86,7 @@ public class BufferedSequence implements Sequence {
         while(result == null && n<buffer.capacity()) {
             int m = 0xff & buffer.get(n++);
             ByteSequence sequence = Sequences.sequence(m);
-            result = sequence.process(process, offset);
+            result = sequence.process(target, offset);
             offset += ByteSequence.SIZE;
         }
 
@@ -120,7 +106,7 @@ public class BufferedSequence implements Sequence {
             if(pos<capacity()) {
                 int seq = 0xff & buffer.get((int) pos);
                 long rem = factor % ByteSequence.SIZE;
-                int dropped = ByteSequence.expunge(seq, rem);
+                int dropped = CompactSequence.expunge(seq, rem);
 
                 if (dropped != seq) {
                     buffer.put((int) pos, (byte) dropped);

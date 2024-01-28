@@ -3,7 +3,10 @@ package de.ditz.primes;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.*;
+import java.util.AbstractList;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.RandomAccess;
 
 /**
  * version:     $
@@ -19,7 +22,7 @@ public class PrimeFile extends AbstractList<BufferedSequence> implements Sequenc
      * A single byte of compacted primes represents 2*3*5=30 numbers.
      */
 
-    public static final int BLOCK = 1<<16;
+    public static final int BLOCK = 1<<15;
 
     public static PrimeFile create(File file, int block) throws IOException {
         return new PrimeFile(BufferedFile.create(file.toPath(), block));
@@ -39,6 +42,8 @@ public class PrimeFile extends AbstractList<BufferedSequence> implements Sequenc
     final BufferedFile file;
 
     final List<BufferedSequence> sequences = new ArrayList<>();
+
+    final RootBuffer root = RootBuffer.build(17);
 
     public PrimeFile(BufferedFile file) {
         this.file = file;
@@ -86,34 +91,38 @@ public class PrimeFile extends AbstractList<BufferedSequence> implements Sequenc
     }
 
     /**
-     * @param start
-     * @param process condition to top
-     * @return true if stopped by condition
+     * Emit primes to a target processor.
+     * The root block misses primes below 17, so the first block is substituted.
+     *
+     * @param start first prime to emit.
+     * @param target to preocess primes.
+     * @return a target result or null if exceeded.
      */
     @Override
-    public <R> R process(long start, Target<? extends R> process) {
+    public <R> R process(long start, Target<? extends R> target) {
+        R result = null;
+
+        // substitute root block
+        if(start<ByteSequence.SIZE) {
+            result = Sequences.PRIMES.process(start, target);
+            if(result!=null)
+                return result;
+
+            // continue after 29
+            start = 30;
+        }
+
+        if(start>limit())
+            return null;
 
         final long block = file.block*ByteSequence.SIZE;
 
-        if(start>block*size())
-            return null;
-
         // find blocks to skip.
-        int n = (int)(start/(block));
+        int n = (int)(start/block);
 
-        R result = null;
-
-        // process first block
-        start -= n*block;
-        if(start>0 && n<size()) {
-            BufferedSequence sequence = this.get(n++);
-            result = sequence.process(start, process);
-        }
-
-        // continue with remaining blocks
         while(result == null && n<size()) {
             BufferedSequence sequence = this.get(n++);
-            result = sequence.process(process);
+            result = sequence.process(start, target);
         }
 
         return result;
@@ -137,13 +146,12 @@ public class PrimeFile extends AbstractList<BufferedSequence> implements Sequenc
     }
 
     void grow() {
-        int base = file.size();
-        BufferedSequence block = new BufferedSequence(base, file.block).init();
+        long base = file.length();
+        long len = base<file.block ? Math.min(16*Math.max(1, base), file.block) - base: file.block - base%file.block;
 
-        if(base==0)
-            block.sieve(block, 7);
-        else
-            block.sieve(this, 7);
+        BufferedSequence block = new BufferedSequence(base, (int)len);
+        root.fill(block);
+        block.sieve(this, root.root+1);
 
         write(block);
     }
@@ -154,10 +162,11 @@ public class PrimeFile extends AbstractList<BufferedSequence> implements Sequenc
 
     public static void main(String ... args) throws IOException {
         
-        try(PrimeFile primes = PrimeFile.create(new File("primes.dat"), 2*7)) {
-            primes.grow();
-
-            System.out.format("%,d %,d\n", primes.limit(), primes.count());
+        try(PrimeFile primes = PrimeFile.append(new File("primes.dat"), BLOCK)) {
+            while(primes.size()<4) {
+                primes.grow();
+                System.out.format("%,d %,d\n", primes.limit(), primes.count());
+            }
 
             primes.process(Target.all(System.out::println));
         }
