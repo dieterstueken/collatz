@@ -1,14 +1,16 @@
 package de.ditz.primes;
 
 
-import java.util.*;
+import java.util.List;
 
 /*
  * Class CompactSequence contains a block of up to 8 numbers below 30=2*3*5
  * which are not a multiple of 2, 3 or 5, but including 1.
  *
  */
-abstract public class ByteSequence extends AbstractList<Integer> implements RandomAccess, Sequence {
+abstract public class ByteSequence extends RandomList<Integer> implements Sequence {
+
+   public static final byte ROOT = (byte)255;
 
    public static long SIZE = 2*3*5;
 
@@ -76,7 +78,9 @@ abstract public class ByteSequence extends AbstractList<Integer> implements Rand
     */
    abstract public ByteSequence expunge(long factor);
 
-   abstract public <R> R process(long start, Target<? extends R> process, long offset);
+   public <R> R process(long start, Target<? extends R> process, long offset) {
+      return null;
+   }
 
    public <R> R process(Target<? extends R> process, long offset) {
       return process(0, process, offset);
@@ -148,9 +152,10 @@ abstract public class ByteSequence extends AbstractList<Integer> implements Rand
       sb.append(']');
       return sb.toString();
    }
-   
+
+
    public static void main(String ... args) {
-      
+
       for(int i=-1; i<33; ++i) {
          System.out.format("%2d: %d\n", i, pcount(i));
       }

@@ -1,21 +1,36 @@
 package de.ditz.primes;
 
 import java.util.AbstractList;
+import java.util.List;
 import java.util.RandomAccess;
 
 class Sequences extends AbstractList<ByteSequence> implements RandomAccess {
 
-   public static final AbstractList<ByteSequence> ALL = new Sequences();
-
-   public static final ByteSequence ROOT = ALL.get(255);
+   public static final Sequences ALL = new Sequences();
 
    public static ByteSequence sequence(int index) {
       return ALL.get(index);
    }
+   
+   final ByteSequence empty = new SingleSequence.EmptySequence();
+
+   final List<? extends SingleSequence> singles = new SingleSequence.Singles();
 
    private final ByteSequence[] sequences = new ByteSequence[256];
+    
+   {
+      sequences[0] = empty;
 
-   @Override
+      // transfer 8 single track sequences
+      singles.forEach(single -> sequences[single.mask()] = single);
+
+      for(int m=2; m<256; ++m) {
+         if(sequences[m]==null)
+            sequences[m] = create(m);
+      }
+   }
+   
+    @Override
    public int size() {
       return 256;
    }
@@ -25,17 +40,6 @@ class Sequences extends AbstractList<ByteSequence> implements RandomAccess {
       return sequences[index];
    }
 
-   {
-      sequences[0] = SingleSequence.EMPTY;
-
-      // transfer 8 single track sequences
-      SingleSequence.SINGLES.forEach(single -> sequences[single.mask()] = single);
-
-      for(int m=2; m<256; ++m) {
-         if(sequences[m]==null)
-            sequences[m] = create(m);
-      }
-   }
 
    private CompactSequence create(int mask) {
       long sequence = 0;
@@ -67,7 +71,7 @@ class Sequences extends AbstractList<ByteSequence> implements RandomAccess {
             } else {
 
                if (start > 28)
-                  return SingleSequence.EMPTY;
+                  return empty;
 
                int m = (int) start;
 
@@ -92,8 +96,8 @@ class Sequences extends AbstractList<ByteSequence> implements RandomAccess {
       };
    }
 
-
    public static void main(String ... args) {
       ALL.forEach(System.out::println);
    }
+
 }

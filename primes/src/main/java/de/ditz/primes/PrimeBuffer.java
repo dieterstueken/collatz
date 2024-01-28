@@ -17,7 +17,7 @@ public class PrimeBuffer extends BufferedSequence {
 
     PrimeBuffer() {
         this(1, 5);
-        buffer.put(0, Sequences.ROOT.getByte());
+        buffer.put(0, ByteSequence.ROOT);
     }
 
     PrimeBuffer grow() {
@@ -29,16 +29,17 @@ public class PrimeBuffer extends BufferedSequence {
     }
 
     PrimeBuffer grow(int prime) {
-        int size = buffer.capacity();
+        int size = capacity();
         int product = prime * size;
         PrimeBuffer grown = new PrimeBuffer(product, prime);
 
-        for (int i = 0; i < prime; ++i) {
-            BufferedSequence slice = grown.slice(i*size, size);
-            slice.buffer.put(0, this.buffer, 0, size);
-            if(i>0)
-                slice.sieve(grown, prime);
+        for (BufferedSequence slice:grown.slices(size)) {
+            slice.buffer.put(0, this.buffer, 0, slice.capacity());
         }
+
+        this.sieve(this,prime);
+
+        grown.sieve(this).apply(prime);
 
         return grown;
     }
@@ -47,17 +48,20 @@ public class PrimeBuffer extends BufferedSequence {
 
         PrimeBuffer result = new PrimeBuffer();
 
-        while (result.factor < limit)
+        while (result.factor < limit) {
             result = result.grow();
+            System.out.format("%d: %,d %,d\n", result.factor, result.limit(), result.count());
+        }
 
         return result;
     }
 
     public static void main(String ... args) {
-        PrimeBuffer sequence = build(11);
+        PrimeBuffer buffer = build(11);
 
-        System.out.format("%,d %,d\n", sequence.limit(), sequence.count());
+        buffer.sieve(buffer, buffer.factor+1);
+        System.out.format("%d: %,d %,d\n", buffer.factor, buffer.limit(), buffer.count());
 
-        //sequence.process(Sequence.all(System.out::println));
+        buffer.process(Target.all(System.out::println));
     }
 }
