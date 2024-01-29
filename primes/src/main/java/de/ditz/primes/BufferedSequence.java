@@ -1,7 +1,7 @@
 package de.ditz.primes;
 
 import java.nio.ByteBuffer;
-import java.util.List;
+import java.util.*;
 
 /**
  * Created by IntelliJ IDEA.
@@ -99,7 +99,6 @@ public class BufferedSequence implements Sequence {
      * @return this if the factor is beyond the limit.
      */
     public BufferedSequence drop(final long factor) {
-
         long pos = ByteSequence.count(factor) - base;
 
         if(pos>=0) {
@@ -113,6 +112,7 @@ public class BufferedSequence implements Sequence {
                 } else {
                     System.out.format("%5d = %2d * 30 + %2d %02x -> %02x %s\n",
                             factor, pos, rem, seq, dropped, dropped == seq ? "!" : "");
+                    return null;
                 }
             } else {
                 // done
@@ -197,25 +197,29 @@ public class BufferedSequence implements Sequence {
      * @return a virtual List of Buffered slices.
      */
     public List<BufferedSequence> slices(int length) {
+        return new Slices(length);
+    }
 
-        if(length<1)
-            throw new IllegalArgumentException("invalid buffer length");
+    protected class Slices extends RandomList<BufferedSequence> {
 
-        return new RandomList<>() {
+        final int length;
 
-            final int size = capacity() / length;
+        protected Slices(int length) {
+            this.length = length;
+            if(length<1)
+                throw new IllegalArgumentException("invalid buffer length");
+        }
 
-            @Override
-            public BufferedSequence get(int index) {
-                int start = index*length;
-                int capacity = Math.min(length, capacity()-start);
-                return slice(start, length);
-            }
+        @Override
+        public BufferedSequence get(int index) {
+            int start = index*length;
+            int capacity = Math.min(length, capacity()-start);
+            return slice(start, length);
+        }
 
-            @Override
-            public int size() {
-                return size;
-            }
-        };
+        @Override
+        public int size() {
+            return capacity() / length;
+        }
     }
 }
