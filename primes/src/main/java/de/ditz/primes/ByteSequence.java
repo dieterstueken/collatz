@@ -43,7 +43,7 @@ abstract public class ByteSequence extends RandomList<Integer> implements Sequen
       if(l<7)
          return l<1 ? 0 : 1;
 
-      if(l>23)
+      if(l>28)
          return 8;
 
       // get position
