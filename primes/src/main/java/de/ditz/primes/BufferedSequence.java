@@ -124,6 +124,23 @@ public class BufferedSequence implements Sequence {
         return null;
     }
 
+    public long[] stat(long[] stat) {
+        int cap = buffer.capacity();
+        int l = stat.length;
+        for(int i=0; i<cap; ++i) {
+            int seq = 0xff & buffer.get((int) i);
+            int n = Sequences.sequence(seq).size();
+            if(n<l)
+                ++stat[n];
+        }
+
+        return stat;
+    }
+
+    public long[] stat() {
+        return stat(new long[8]);
+    }
+
     protected class Sieve implements Target<BufferedSequence> {
 
         long limit = limit();

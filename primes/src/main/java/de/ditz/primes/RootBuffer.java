@@ -56,21 +56,22 @@ public class RootBuffer extends BufferedSequence {
      */
     public BufferedSequence fill(BufferedSequence target) {
 
-        // start position
+        // start at this.buffer's position
         int pos = (int)(target.base % this.capacity());
 
-        // fill the first part partially
+        // fill the first partial part from this.buffer@pos
         if(pos!=0) {
             int length = Math.min(this.capacity()-pos, target.capacity());
             target.buffer.put(0, this.buffer, pos, length);
-            pos += length;
+            // switch to target.buffer's position
+            pos = length;
         }
 
-        // fill the remaining part
+        // fill the remaining part from repeating this.buffer
         while(pos<target.capacity()) {
-            int length = Math.min(this.capacity(), target.capacity() - pos);
+            int length = Math.min(this.capacity(), target.capacity()-pos);
             target.buffer.put(pos, this.buffer, 0, length);
-            pos += this.capacity();
+            pos += length;
         }
 
         return target;
@@ -107,17 +108,19 @@ public class RootBuffer extends BufferedSequence {
 
         while (result.prime < limit) {
             result = result.grow();
-            System.out.format("%d: %,d %,d %,d %.1f\n",
-                    result.prime, result.capacity(), result.limit(), result.count(),
-                    1.0 * result.limit() / result.count());
+
         }
 
         return result;
     }
 
     public static void main(String ... args) {
-        RootBuffer buffer = build(19);
-        
+        RootBuffer result = build(19);
+
+        System.out.format("%d: %,d %,d %,d %.1f\n",
+                result.prime, result.capacity(), result.limit(), result.count(),
+                1.0 * result.limit() / result.count());
+
         //buffer.process(Target.all(System.out::println));
     }
 }
