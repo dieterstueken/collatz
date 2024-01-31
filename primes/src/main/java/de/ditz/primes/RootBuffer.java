@@ -1,6 +1,7 @@
 package de.ditz.primes;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * A RootBuffer is a template containing no numbers which are a multiple of factor.
@@ -47,6 +48,40 @@ public class RootBuffer extends BufferedSequence {
 
     RootBuffer grow(long prime) {
         return grow((int)prime);
+    }
+
+    /**
+     * Infinite Stream of factors until target returns a result to finish the stream.
+     *
+     * @param start to suppress all values < start.
+     * @param target to generate a result to stop the processing.
+     * @return a result from target.
+     * @param <R> type of result.
+     */
+    @Override
+    public <R> R process(long start, Target<? extends R> target) {
+
+        if(start<0)
+            start = 0;
+
+        int n = (int)((start / ByteSequence.SIZE)%buffer.capacity());
+        long offset = start - start%ByteSequence.SIZE;
+        start %= ByteSequence.SIZE;
+
+        int m = 0xff & buffer.get(n);
+        ByteSequence sequence = Sequences.sequence(m);
+        R result = sequence.process(start, target, offset);
+
+        while(result==null) {
+            ++n;
+            offset += ByteSequence.SIZE;
+            n %= buffer.capacity();
+            m = 0xff & buffer.get(n);
+            sequence = Sequences.sequence(m);
+            result = sequence.process(target, offset);
+        }
+
+        return result;
     }
 
     /**

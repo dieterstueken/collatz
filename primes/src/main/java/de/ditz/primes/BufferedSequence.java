@@ -1,7 +1,7 @@
 package de.ditz.primes;
 
 import java.nio.ByteBuffer;
-import java.util.*;
+import java.util.List;
 
 /**
  * Created by IntelliJ IDEA.
@@ -64,12 +64,15 @@ public class BufferedSequence implements Sequence {
     }
 
     @Override
-    public <R> R process(final long start, Target<? extends R> target) {
+    public <R> R process(long start, Target<? extends R> target) {
 
         long offset = offset();
 
+        if(start<offset)
+            start = offset;
+
         // find bytes to skip.
-        int n = (int)(Math.max(start, offset)/ByteSequence.SIZE);
+        int n = (int)(start/ByteSequence.SIZE);
         offset += n*ByteSequence.SIZE;
 
         R result = null;
