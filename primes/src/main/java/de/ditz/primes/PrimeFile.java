@@ -152,8 +152,17 @@ public class PrimeFile implements Sequence, AutoCloseable {
 
     BufferedSequence grow() {
         long base = file.length();
-        
-        long len = base<file.block ? Math.min(Math.max(16, 2*base), file.block) - base: file.block - base%file.block;
+
+        long len;
+
+        if(base==0) {
+            // else we miss 31*31
+            len = 8;
+        } else if(2*base<file.block) {
+            len = base;
+        } else {
+            len = file.block - base%file.block;
+        }
 
         BufferedSequence block = new BufferedSequence(base, (int)len);
         root.fill(block);

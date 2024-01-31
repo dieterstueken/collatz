@@ -39,34 +39,35 @@ public class PowerTarget<R> implements Target<R> {
 
     PowerTarget<R> reset(long prime) {
         this.prime = prime;
-        this.pow = 1;
+        this.pow = prime;
         return this;
     }
 
     @Override
     public R apply(final long factor) {
 
-        if(pow<factor) {
-            // initial setup
-            if(pow<=1) {
-                if(prime<=1 || pow<1)
-                    throw new IllegalStateException("not initialized");
+        // process missing powers so far
+        while(pow<factor) {
 
-                // grow beyond current factor
-                while(pow<=factor)
-                    pow *= prime;
-            } else {
-                // apply power previously skipped
-                R result = target.apply(pow * factor);
+            // verify setup setup
+            if(pow<prime || prime <= 1) {
+                throw new IllegalStateException("not initialized");
+            }
+
+            if(true) {
+
+                // emit pure power
+                R result = target.apply(pow * prime);
+
+                // already finished
                 if (result != null)
                     return result;
-
-                pow *= prime;
             }
+
+            pow *= prime;
         }
 
-        R result = target.apply(prime*factor);
-
-        return result;
+        // and the regular product
+        return target.apply(factor * prime);
     }
 }

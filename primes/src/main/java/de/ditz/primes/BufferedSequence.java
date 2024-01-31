@@ -69,7 +69,7 @@ public class BufferedSequence implements Sequence {
         long offset = offset();
 
         // find bytes to skip.
-        int n = (int)((start-offset)/ByteSequence.SIZE);
+        int n = (int)(Math.max(start, offset)/ByteSequence.SIZE);
         offset += n*ByteSequence.SIZE;
 
         R result = null;
@@ -163,7 +163,7 @@ public class BufferedSequence implements Sequence {
             if (factor * prime < limit) {
 
                 target.reset(prime);
-                primes.process(factor, target);
+                primes.process(factor+1, target);
 
                 // continue with larger primes
                 return null;

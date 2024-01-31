@@ -1,8 +1,6 @@
 package de.ditz.primes;
 
-import java.util.AbstractList;
-import java.util.List;
-import java.util.RandomAccess;
+import java.util.*;
 
 class Sequences extends AbstractList<CompactSequence> implements RandomAccess {
 
@@ -111,7 +109,7 @@ class Sequences extends AbstractList<CompactSequence> implements RandomAccess {
          public ByteSequence from(long start) {
 
             if(start<=7) {
-               if(mask>1 && mask%2!=0) // drop 1
+               if(start>1 && mask%2!=0) // drop 1
                   return Sequences.sequence(mask&0xfe);
             } else {
 
