@@ -104,6 +104,19 @@ public class PrimeFile implements Sequence, AutoCloseable {
         return file.blocks(ByteSequence.count(start));
     }
 
+    public long[] stat(long[] stat) {
+
+        for (BufferedSequence buffer : buffers) {
+            buffer.stat(stat);
+        }
+
+        return stat;
+    }
+
+    public long[] stat() {
+        return stat(new long[8]);
+    }
+
     /**
      * Emit primes to a target processor.
      * The root block misses primes below 17, so the first block is substituted.
@@ -165,8 +178,7 @@ public class PrimeFile implements Sequence, AutoCloseable {
         }
 
         BufferedSequence block = new BufferedSequence(base, (int)len);
-        root.fill(block);
-        block.sieve(this, root.prime +1);
+        root.sieve(block).sieve(this);
 
         write(block);
 
@@ -180,12 +192,18 @@ public class PrimeFile implements Sequence, AutoCloseable {
     public static void main(String ... args) throws IOException {
         
         try(PrimeFile primes = PrimeFile.append(new File("primes.dat"), BLOCK)) {
-            while(primes.size()<4) {
+
+            while(primes.size()<100) {
                 primes.grow();
                 System.out.format("%,d %,d\n", primes.limit(), primes.count());
             }
 
-            primes.process(Target.all(System.out::println));
+            long[] stat = primes.stat();
+            for (int i = 0; i < stat.length; i++) {
+                long l = stat[i];
+                System.out.format("%d: %,d\n", i, l);
+           }
+
         }
     }
 }

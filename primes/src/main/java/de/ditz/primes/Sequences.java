@@ -7,7 +7,11 @@ class Sequences extends AbstractList<CompactSequence> implements RandomAccess {
    public static final Sequences ALL = new Sequences();
 
    public static CompactSequence sequence(int index) {
-      return ALL.get(index&0xff);
+      return ALL.get(index);
+   }
+
+   public static CompactSequence single(int index) {
+      return ALL.singles.get(index);
    }
 
    public static ByteSequence root() {

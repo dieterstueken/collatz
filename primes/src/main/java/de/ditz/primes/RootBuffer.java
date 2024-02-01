@@ -1,7 +1,6 @@
 package de.ditz.primes;
 
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 /**
  * A RootBuffer is a template containing no numbers which are a multiple of factor.
@@ -16,7 +15,7 @@ public class RootBuffer extends BufferedSequence {
 
     final List<BufferedSequence> buffers;
 
-    RootBuffer() {
+    private RootBuffer() {
         super(0, 1);
         buffer.put(0, (byte)ByteSequence.ROOT);
         this.root = null;
@@ -24,17 +23,15 @@ public class RootBuffer extends BufferedSequence {
         buffers = Collections.emptyList();
     }
 
-    RootBuffer(RootBuffer root, int prime) {
+    private RootBuffer(RootBuffer root, int prime) {
         super(0, prime * root.capacity());
         this.root = root;
         this.prime = prime;
+        this.buffers = new Slices(root.capacity());
+    }
 
-        root.fill(this);
-
-        // drop all higher multiples of grown PrimeBuffers root.
-        root.process(this::dropRoots);
-
-        buffers = new Slices(root.capacity());
+    public Sieve sieve(BufferedSequence sequence) {
+        return new Sieve(this, sequence).reset();
     }
 
     @Override
@@ -42,46 +39,16 @@ public class RootBuffer extends BufferedSequence {
         return String.format("RootBuffer{%d:%d:%d}", prime, buffer.capacity(), this.limit());
     }
 
-    RootBuffer grow() {
-        return process(prime +1, this::grow);
-    }
-
-    RootBuffer grow(long prime) {
-        return grow((int)prime);
-    }
-
     /**
-     * Infinite Stream of factors until target returns a result to finish the stream.
+     * Get the sequence at index%capacity.
+     * This results in an infinite sequence.
      *
-     * @param start to suppress all values < start.
-     * @param target to generate a result to stop the processing.
-     * @return a result from target.
-     * @param <R> type of result.
+     * @param index of ByteSequence to get.
+     * @return a ByteSequence at index%capacity.
      */
-    @Override
-    public <R> R process(long start, Target<? extends R> target) {
-
-        if(start<0)
-            start = 0;
-
-        int n = (int)((start / ByteSequence.SIZE)%buffer.capacity());
-        long offset = start - start%ByteSequence.SIZE;
-        start %= ByteSequence.SIZE;
-
-        int m = 0xff & buffer.get(n);
-        ByteSequence sequence = Sequences.sequence(m);
-        R result = sequence.process(start, target, offset);
-
-        while(result==null) {
-            ++n;
-            offset += ByteSequence.SIZE;
-            n %= buffer.capacity();
-            m = 0xff & buffer.get(n);
-            sequence = Sequences.sequence(m);
-            result = sequence.process(target, offset);
-        }
-
-        return result;
+    protected ByteSequence sequence(long index) {
+        int m = 0xff & buffer.get((int)(index%buffer.capacity()));
+        return Sequences.sequence(m);
     }
 
     /**
@@ -112,31 +79,16 @@ public class RootBuffer extends BufferedSequence {
         return target;
     }
 
-    /**
-     * Grop this buffer by the next prime.
-     * @param next prime to grow by.
-     * @return a grown PrimeBuffer.
-     */
-    RootBuffer grow(int next) {
-        return new RootBuffer(this, next);
+    private RootBuffer grow() {
+        return process(prime+1, this::grow);
     }
 
-    /**
-     * drop all multiples of this.root from this sequence.
-     * @param factor to apply.
-     * @return this, if we are done or null to continue.
-     */
-    private RootBuffer dropRoots(long factor) {
-        long product = factor * this.prime;
-
-        if(product<limit()) {
-            drop(product);
-            return null;
-        }
-
-        return this;
+    private RootBuffer grow(long prime) {
+        RootBuffer grown = new RootBuffer(this, (int) prime);
+        sieve(grown).dropAll(prime);
+        return grown;
     }
-
+    
     public static RootBuffer build(long limit) {
 
         RootBuffer result = new RootBuffer();
