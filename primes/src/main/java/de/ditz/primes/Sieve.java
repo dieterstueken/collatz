@@ -6,7 +6,7 @@ public class Sieve {
 
    final BufferedSequence target;
 
-   final Target<BufferedSequence> drop = this::drop;
+   final Target<BufferedSequence> drop = this::dropFactor;
 
    final Target<BufferedSequence> sieve = this::sieve;
 
@@ -22,26 +22,30 @@ public class Sieve {
       return this;
    }
 
+   private BufferedSequence dropFactor(long factor) {
+      return target.drop(factor*prime);
+   }
+
+   public BufferedSequence dropPrimes(long start, long prime) {
+      this.prime = prime;
+      return root.process(start, drop);
+   }
+
    public BufferedSequence sieve(Sequence primes) {
       return primes.process(root.prime+1, sieve);
    }
 
-   public BufferedSequence drop(long factor) {
-      return target.drop(factor*prime);
-   }
-
    public BufferedSequence sieve(long prime) {
-      this.prime = prime;
-
-      long factor = target.offset() / root.prime;
+      long factor = target.offset() / prime;
       if(factor<prime)
          factor = prime;
 
-      return root.process(factor, drop);
-   }
+      if(factor*prime>target.limit())
+         return target;
 
-   public BufferedSequence dropAll(long prime) {
-      this.prime = prime;
-      return root.process(drop);
+      dropPrimes(factor, prime);
+
+      // continue with further primes.
+      return null;
    }
 }

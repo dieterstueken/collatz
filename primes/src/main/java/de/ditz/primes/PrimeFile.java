@@ -3,7 +3,10 @@ package de.ditz.primes;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.*;
+import java.util.AbstractList;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * version:     $
@@ -193,17 +196,16 @@ public class PrimeFile implements Sequence, AutoCloseable {
         
         try(PrimeFile primes = PrimeFile.append(new File("primes.dat"), BLOCK)) {
 
-            while(primes.size()<100) {
+            while(primes.limit()<200000) {
                 primes.grow();
                 System.out.format("%,d %,d\n", primes.limit(), primes.count());
             }
 
-            long[] stat = primes.stat();
-            for (int i = 0; i < stat.length; i++) {
-                long l = stat[i];
-                System.out.format("%d: %,d\n", i, l);
-           }
+            System.out.println();
+            System.out.format("%,d %,d\n", primes.limit(), primes.count());
 
+            long[] stat = primes.stat();
+            System.out.println(Arrays.toString(stat));
         }
     }
 }

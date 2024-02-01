@@ -1,7 +1,7 @@
 package de.ditz.primes;
 
 import java.nio.ByteBuffer;
-import java.util.*;
+import java.util.List;
 
 /**
  * Created by IntelliJ IDEA.
@@ -79,9 +79,6 @@ public class BufferedSequence implements Sequence {
         if(index<0) {
             index = 0;
             start = 0;
-        } else {
-            // remaining bits only
-            start %= ByteSequence.SIZE;
         }
 
         R result = null;
@@ -116,7 +113,7 @@ public class BufferedSequence implements Sequence {
      * @return a ByteSequence or null if exceeded
      */
     protected ByteSequence sequence(long index) {
-        if(index>buffer.capacity())
+        if(index>=buffer.capacity())
             return null;
 
         int m = 0xff & buffer.get((int)index);

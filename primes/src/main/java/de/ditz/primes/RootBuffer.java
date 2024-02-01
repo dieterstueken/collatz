@@ -1,6 +1,8 @@
 package de.ditz.primes;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * A RootBuffer is a template containing no numbers which are a multiple of factor.
@@ -85,7 +87,7 @@ public class RootBuffer extends BufferedSequence {
 
     private RootBuffer grow(long prime) {
         RootBuffer grown = new RootBuffer(this, (int) prime);
-        sieve(grown).dropAll(prime);
+        sieve(grown).dropPrimes(0, prime);
         return grown;
     }
     
@@ -108,6 +110,6 @@ public class RootBuffer extends BufferedSequence {
                 result.prime, result.capacity(), result.limit(), result.count(),
                 1.0 * result.limit() / result.count());
 
-        //buffer.process(Target.all(System.out::println));
+        System.out.println(Arrays.toString(result.stat()));
     }
 }
