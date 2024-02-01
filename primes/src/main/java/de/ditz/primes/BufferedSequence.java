@@ -1,7 +1,7 @@
 package de.ditz.primes;
 
 import java.nio.ByteBuffer;
-import java.util.List;
+import java.util.*;
 
 /**
  * Created by IntelliJ IDEA.
@@ -16,6 +16,8 @@ public class BufferedSequence implements Sequence {
     // byte offset.
     final long base;
 
+    long dup = 0;
+
     final List<ByteSequence> sequences = new RandomList<>() {
 
         @Override
@@ -25,7 +27,7 @@ public class BufferedSequence implements Sequence {
 
         @Override
         public ByteSequence get(int i) {
-            return Sequences.sequence(0xff&buffer.get(i));
+            return sequence(i);
         }
     };
 
@@ -63,37 +65,61 @@ public class BufferedSequence implements Sequence {
         return sequences.stream().mapToInt(ByteSequence::size).sum();
     }
 
+    /**
+     * Process all sequences starting at start until done.
+     * @param start only pass values >= start.
+     * @param target to generate a result to stop the processing.
+     * @return a result from target or null of exceeded.
+     * @param <R> expected type of result.
+     */
     @Override
     public <R> R process(long start, Target<? extends R> target) {
 
-        long offset = offset();
+        // absolute index
+        long index = start / ByteSequence.SIZE - base;
 
-        if(start<offset)
-            start = offset;
-
-        // find bytes to skip.
-        int n = (int)(start/ByteSequence.SIZE);
-        offset += n*ByteSequence.SIZE;
+        if(index<0) {
+            index = 0;
+            start = 0;
+        }
 
         R result = null;
+        long offset = (index + base) * ByteSequence.SIZE;
 
-        // process first partial block
-        if(start>offset && n<buffer.capacity()) {
-            int m = 0xff & buffer.get(n++);
-            ByteSequence sequence = Sequences.sequence(m);
+        // process possible first partial sequence
+        if(start>0) {
+            ByteSequence sequence = sequence(index++);
+            if(sequence==null)
+                // already exceeded
+                return null;
+
             result = sequence.process(start, target, offset);
             offset += ByteSequence.SIZE;
         }
 
-        // continue with full remaining bytes
-        while(result == null && n<buffer.capacity()) {
-            int m = 0xff & buffer.get(n++);
-            ByteSequence sequence = Sequences.sequence(m);
+        while(result==null) {
+            ByteSequence sequence = sequence(index++);
+            if(sequence==null)
+                return null;
+
             result = sequence.process(target, offset);
             offset += ByteSequence.SIZE;
         }
 
         return result;
+    }
+
+    /**
+     * Get the sequence at index or null of exceeded.
+     * @param index of ByteSequence to get.
+     * @return a ByteSequence or null if exceeded
+     */
+    protected ByteSequence sequence(long index) {
+        if(index>=buffer.capacity())
+            return null;
+
+        int m = 0xff & buffer.get((int)index);
+        return Sequences.sequence(m);
     }
 
     /**
@@ -113,8 +139,9 @@ public class BufferedSequence implements Sequence {
                 if (dropped != seq) {
                     buffer.put((int) pos, (byte) dropped);
                 } else {
-                    System.out.format("%5d = %2d * 30 + %2d %02x -> %02x %s\n",
-                            factor, pos, rem, seq, dropped, dropped == seq ? "!" : "");
+                    //System.out.format("%5d = %2d * 30 + %2d %02x -> %02x %s\n",
+                    //         factor, pos, rem, seq, dropped, dropped == seq ? "!" : "");
+                    ++dup;
                     return null;
                 }
             } else {
@@ -142,52 +169,6 @@ public class BufferedSequence implements Sequence {
 
     public long[] stat() {
         return stat(new long[8]);
-    }
-
-    protected class Sieve implements Target<BufferedSequence> {
-
-        long limit = limit();
-
-        final Sequence primes;
-
-        final PowerTarget<BufferedSequence> target = new PowerTarget<>(BufferedSequence.this::drop);
-
-        protected Sieve(Sequence primes) {
-            this.primes = primes;
-        }
-
-        @Override
-        public BufferedSequence apply(long prime) {
-            // get remaining factor to reach the offset
-            long factor = offset() / prime;
-            if(factor<prime)
-                factor = prime;
-
-            if (factor * prime < limit) {
-
-                target.reset(prime);
-                primes.process(factor+1, target);
-
-                // continue with larger primes
-                return null;
-            } else
-                return BufferedSequence.this;
-        }
-    }
-
-    protected Sieve sieve(Sequence primes) {
-        return new Sieve(primes);
-    }
-
-    BufferedSequence sieve(Sequence primes, long start) {
-
-
-        BufferedSequence result = primes.process(start, sieve(primes));
-
-        if(result==null)
-            throw new IllegalStateException("primes under run");
-
-        return result;
     }
 
     /**

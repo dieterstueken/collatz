@@ -1,9 +1,14 @@
 package de.ditz.primes;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.nio.ByteBuffer;
-import java.util.*;
+import java.util.AbstractList;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * version:     $
@@ -21,12 +26,12 @@ public class PrimeFile implements Sequence, AutoCloseable {
 
     public static final int BLOCK = 1<<15;
 
-    public static PrimeFile create(File file, int block) throws IOException {
-        return new PrimeFile(BufferedFile.create(file.toPath(), block));
+    public static PrimeFile create(File file) throws IOException {
+        return new PrimeFile(BufferedFile.create(file.toPath(), BLOCK));
     }
 
-    public static PrimeFile append(File file, int block) throws IOException {
-        return new PrimeFile(BufferedFile.append(file.toPath(), block));
+    public static PrimeFile append(File file) throws IOException {
+        return new PrimeFile(BufferedFile.append(file.toPath(), BLOCK));
     }
 
     public static PrimeFile open(File file) throws IOException {
@@ -37,6 +42,8 @@ public class PrimeFile implements Sequence, AutoCloseable {
     }
 
     final BufferedFile file;
+
+    long dup = 0;
 
     final List<BufferedSequence> buffers = new AbstractList<> () {
         final List<BufferedSequence> cached = new ArrayList();
@@ -104,6 +111,19 @@ public class PrimeFile implements Sequence, AutoCloseable {
         return file.blocks(ByteSequence.count(start));
     }
 
+    public long[] stat(long[] stat) {
+
+        for (BufferedSequence buffer : buffers) {
+            buffer.stat(stat);
+        }
+
+        return stat;
+    }
+
+    public long[] stat() {
+        return stat(new long[8]);
+    }
+
     /**
      * Emit primes to a target processor.
      * The root block misses primes below 17, so the first block is substituted.
@@ -165,13 +185,27 @@ public class PrimeFile implements Sequence, AutoCloseable {
         }
 
         BufferedSequence block = new BufferedSequence(base, (int)len);
-        root.fill(block);
-        block.sieve(this, root.prime +1);
+        root.sieve(block).sieve(this);
 
         write(block);
 
         return block;
     }
+
+    void dump(PrintWriter out) {
+        process(Target.all(out::println));
+    }
+
+    void dump(File file) throws FileNotFoundException {
+        try (PrintWriter out = new PrintWriter(file)) {
+            dump(out);
+        }
+    }
+
+    void dump(String file) throws FileNotFoundException {
+        dump(new File(file));
+    }
+
 
     public long count() {
         return buffers.stream().mapToLong(BufferedSequence::count).sum();
@@ -179,13 +213,18 @@ public class PrimeFile implements Sequence, AutoCloseable {
 
     public static void main(String ... args) throws IOException {
         
-        try(PrimeFile primes = PrimeFile.append(new File("primes.dat"), BLOCK)) {
-            while(primes.size()<4) {
+        try(PrimeFile primes = PrimeFile.append(new File("primes.dat"))) {
+
+            while(primes.buffers.size()<1024) {
                 primes.grow();
-                System.out.format("%,d %,d\n", primes.limit(), primes.count());
+                System.out.format("%d %,d %,d %,d\n", primes.size(), primes.limit(), primes.count(), primes.dup);
             }
 
-            primes.process(Target.all(System.out::println));
+            System.out.println();
+            System.out.format("%d %,d %,d %,d\n", primes.size(), primes.limit(), primes.count(), primes.dup);
+
+            long[] stat = primes.stat();
+            System.out.println(Arrays.toString(stat));
         }
     }
 }

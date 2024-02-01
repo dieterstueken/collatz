@@ -1,13 +1,19 @@
 package de.ditz.primes;
 
-import java.util.*;
+import java.util.AbstractList;
+import java.util.List;
+import java.util.RandomAccess;
 
 class Sequences extends AbstractList<CompactSequence> implements RandomAccess {
 
    public static final Sequences ALL = new Sequences();
 
    public static CompactSequence sequence(int index) {
-      return ALL.get(index&0xff);
+      return ALL.get(index);
+   }
+
+   public static CompactSequence single(int index) {
+      return ALL.singles.get(index);
    }
 
    public static ByteSequence root() {
@@ -35,14 +41,16 @@ class Sequences extends AbstractList<CompactSequence> implements RandomAccess {
       public <R> R process(long start, Target<? extends R> target) {
 
          if (start <= 5) {
+            // try 2,3,5
             for (int i = 0; i < 3; ++i) {
                int p = factors[i];
                if (p >= start) {
-                  R result = target.apply(2);
+                  R result = target.apply(p);
                   if (result != null)
                      return result;
                }
             }
+            start = 7;
          }
 
          // delegate to root sequence for p>5.
@@ -113,7 +121,7 @@ class Sequences extends AbstractList<CompactSequence> implements RandomAccess {
                   return Sequences.sequence(mask&0xfe);
             } else {
 
-               if (start > 28)
+               if (start > 29)
                   return empty;
 
                int m = (int) start;
