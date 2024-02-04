@@ -161,11 +161,17 @@ public class BufferedSequence implements Sequence {
     public long[] stat(long[] stat) {
         int cap = buffer.capacity();
         int l = stat.length;
+
         for(int i=0; i<cap; ++i) {
             int seq = 0xff & buffer.get((int) i);
+
             int n = Sequences.sequence(seq).size();
+
             if(n<l)
                 ++stat[n];
+
+            if(l>8)
+                stat[8] += n;
         }
 
         return stat;

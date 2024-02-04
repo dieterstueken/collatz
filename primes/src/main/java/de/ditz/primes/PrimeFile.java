@@ -70,7 +70,7 @@ public class PrimeFile implements Sequence, AutoCloseable {
     }
 
     public long[] stat() {
-        return stat(new long[8]);
+        return stat(new long[9]);
     }
 
     /**
@@ -119,7 +119,7 @@ public class PrimeFile implements Sequence, AutoCloseable {
 
         @Override
         public BufferedSequence apply(long product) {
-            return target.drop(pow*product);
+            return target.drop(Math.multiplyExact(pow, product));
         }
 
         public BufferedSequence sieve(BufferedSequence target) {
@@ -136,7 +136,7 @@ public class PrimeFile implements Sequence, AutoCloseable {
             if(prime*prime>=target.limit())
                 return target;
 
-            for(pow=prime; pow < target.limit(); pow *= prime) {
+            for(pow=prime; pow < target.limit(); pow = Math.multiplyExact(pow, prime)) {
 
                 if(pow>prime && pow>target.offset()) {
                     target.drop(pow);
@@ -144,7 +144,7 @@ public class PrimeFile implements Sequence, AutoCloseable {
 
                 long factor = target.offset() / prime;
                 factor = Math.max(factor, prime+1);
-                if(pow*factor<target.limit())
+                if(pow<target.limit()/factor)
                     root.process(factor, this);
             }
 
@@ -196,23 +196,24 @@ public class PrimeFile implements Sequence, AutoCloseable {
     }
 
     public static void log(PrimeFile primes) {
-        //System.out.format("%d %,d %,d\n", primes.size(), primes.limit(), primes.dup);
-        System.out.format("%d %,d %,d %,d\n", primes.size(), primes.limit(), primes.count(), primes.dup);
+        if((primes.buffers.size()%1000)==0)
+            System.out.format("%d %,d %,d %s\n", primes.size(), primes.limit(), primes.dup, Arrays.toString(primes.stat()));
+        else
+            System.out.format("%d %,d %,d\n", primes.size(), primes.limit(), primes.dup);
     }
 
     public static void main(String ... args) throws IOException {
         
         try(PrimeFile primes = PrimeFile.append(new File("primes.dat"))) {
 
-            while(primes.buffers.size()<1024) {
+            while(primes.buffers.size()<1024*1024*4) {
                 primes.grow();
-                log(primes);
+                if((primes.buffers.size()%100)==0)
+                    log(primes);
             }
 
             System.out.println();
-
-            long[] stat = primes.stat();
-            System.out.println(Arrays.toString(stat));
+            log(primes);
         }
     }
 }
