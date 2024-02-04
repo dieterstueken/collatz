@@ -9,7 +9,7 @@ import java.util.*;
  * Date: 14.01.24
  * Time: 14:43
  */
-public class BufferedSequence implements Sequence {
+public class BufferedSequence implements Sequence, Target<BufferedSequence> {
 
     final ByteBuffer buffer;
 
@@ -39,6 +39,10 @@ public class BufferedSequence implements Sequence {
     public BufferedSequence(long base, int size) {
         this.buffer = ByteBuffer.allocateDirect(size);
         this.base = base;
+    }
+
+    public String toString() {
+        return String.format("BufferedSequence{%d:%d:%d}", base, capacity(), offset());
     }
 
     public ByteBuffer getBuffer() {
@@ -122,6 +126,11 @@ public class BufferedSequence implements Sequence {
         return Sequences.sequence(m);
     }
 
+    @Override
+    public BufferedSequence apply(final long factor) {
+        return drop(factor);
+    }
+
     /**
      * Drop some factor from this sequence.
      * @param factor to drop.
@@ -157,11 +166,17 @@ public class BufferedSequence implements Sequence {
     public long[] stat(long[] stat) {
         int cap = buffer.capacity();
         int l = stat.length;
+
         for(int i=0; i<cap; ++i) {
             int seq = 0xff & buffer.get((int) i);
+
             int n = Sequences.sequence(seq).size();
+
             if(n<l)
                 ++stat[n];
+
+            if(l>8)
+                stat[8] += n;
         }
 
         return stat;

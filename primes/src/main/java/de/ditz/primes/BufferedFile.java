@@ -6,7 +6,10 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.*;
+import java.util.AbstractList;
+import java.util.EnumSet;
+import java.util.RandomAccess;
+import java.util.Set;
 
 /**
  * Created by IntelliJ IDEA.
@@ -16,14 +19,14 @@ import java.util.*;
  */
 public class BufferedFile extends AbstractList<ByteBuffer> implements RandomAccess, AutoCloseable {
 
-    final int block;
+    final int blockSize;
 
     final FileChannel channel;
 
     protected long length;
 
-    protected BufferedFile(FileChannel channel, int block) throws IOException {
-        this.block = block;
+    protected BufferedFile(FileChannel channel, int blockSize) throws IOException {
+        this.blockSize = blockSize;
         this.channel = channel;
         this.length = channel.size();
     }
@@ -34,11 +37,7 @@ public class BufferedFile extends AbstractList<ByteBuffer> implements RandomAcce
     }
 
     int blockSize() {
-        return block;
-    }
-
-    long blocks(long size) {
-        return size / block;
+        return blockSize;
     }
 
     public long length() {
@@ -48,6 +47,15 @@ public class BufferedFile extends AbstractList<ByteBuffer> implements RandomAcce
     @Override
     public int size() {
         return (int)(this.length / blockSize());
+    }
+
+
+    public int blocks(long size) {
+        return (int) (size / blockSize);
+    }
+
+    public int blocks() {
+        return blocks(length + blockSize - 1);
     }
 
     @Override

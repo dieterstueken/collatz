@@ -20,4 +20,18 @@ public interface Sequence {
     default <R> R process(Target<? extends R> process) {
         return process(0, process);
     }
+
+    default Sequence from(long start) {
+        return new Sequence() {
+
+            public <R> R process(Target<? extends R> target) {
+                return Sequence.this.process(target.start(start));
+            }
+
+            @Override
+            public <R> R process(long skip, Target<? extends R> target) {
+                return Sequence.this.process(target.start(Math.max(skip, start)));
+            }
+        };
+    }
 }

@@ -4,11 +4,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.nio.ByteBuffer;
-import java.util.AbstractList;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
 /**
  * version:     $
@@ -41,74 +37,27 @@ public class PrimeFile implements Sequence, AutoCloseable {
         return new PrimeFile(BufferedFile.open(file.toPath(), block));
     }
 
-    final BufferedFile file;
-
     long dup = 0;
 
-    final List<BufferedSequence> buffers = new AbstractList<> () {
-        final List<BufferedSequence> cached = new ArrayList();
-
-        @Override
-        public int size() {
-            return (int)((file.length + file.blockSize() - 1) / file.blockSize());
-        }
-
-        private BufferedSequence sequence(int index) {
-            long offset = index*file.block*ByteSequence.SIZE;
-            return new BufferedSequence(offset, file.get(index));
-        }
-
-        @Override
-        public BufferedSequence get(int i) {
-            BufferedSequence sequence = null;
-
-            if(i < cached.size()) {
-                sequence = cached.get(i);
-            } else {
-                synchronized (cached) {
-                    if (i < cached.size())
-                        sequence = cached.get(i);
-                    else {
-                        for (int k = cached.size(); k <= i; ++k) {
-                            sequence = sequence(k);
-                        }
-                    }
-                }
-            }
-
-            // verify partial sequences
-            if(sequence.capacity()<file.block && sequence.limit()<file.size()) {
-                // reload sequence after file grown
-                sequence = sequence(i);
-                cached.set(i, sequence);
-            }
-            
-            return sequence;
-        }
-    };
+    final BufferCache buffers;
 
     final RootBuffer root = RootBuffer.build(17);
 
     public PrimeFile(BufferedFile file) {
-        this.file = file;
+        this.buffers = new BufferCache(file);
     }
-
 
     public int size() {
         return buffers.size();
     }
 
     public long limit() {
-        return ByteSequence.SIZE * file.length();
+        return buffers.limit();
     }
 
     @Override
     public void close() throws IOException {
-        file.close();
-    }
-
-    long blocks(long start) {
-        return file.blocks(ByteSequence.count(start));
+        buffers.close();
     }
 
     public long[] stat(long[] stat) {
@@ -121,7 +70,7 @@ public class PrimeFile implements Sequence, AutoCloseable {
     }
 
     public long[] stat() {
-        return stat(new long[8]);
+        return stat(new long[9]);
     }
 
     /**
@@ -149,7 +98,7 @@ public class PrimeFile implements Sequence, AutoCloseable {
         if(start>limit())
             return null;
 
-        final long block = file.block*ByteSequence.SIZE;
+        final long block = buffers.blockSize()*ByteSequence.SIZE;
 
         // find blocks to skip.
         int n = (int)(start/block);
@@ -162,32 +111,24 @@ public class PrimeFile implements Sequence, AutoCloseable {
         return result;
     }
 
-    public void write(BufferedSequence sequence) {
-        write(sequence.getBuffer());
-    }
-
-    public void write(ByteBuffer buffer) {
-        file.write(buffer);
-    }
-
     BufferedSequence grow() {
-        long base = file.length();
+        long base = buffers.length();
 
         long len;
 
         if(base==0) {
             // else we miss 31*31
             len = 8;
-        } else if(2*base<file.block) {
+        } else if(2*base<buffers.blockSize()) {
             len = base;
         } else {
-            len = file.block - base%file.block;
+            len = buffers.blockSize() - base%buffers.blockSize();
         }
 
         BufferedSequence block = new BufferedSequence(base, (int)len);
         root.sieve(block).sieve(this);
 
-        write(block);
+        buffers.write(block);
 
         return block;
     }
@@ -211,20 +152,26 @@ public class PrimeFile implements Sequence, AutoCloseable {
         return buffers.stream().mapToLong(BufferedSequence::count).sum();
     }
 
+    public static void log(PrimeFile primes) {
+        if((primes.buffers.size()%1000)==0) {
+            long[] stat = primes.stat();
+            System.out.format("%d %,d %,d %,d %s\n", primes.size(), primes.limit(), primes.dup, stat[8], Arrays.toString(primes.stat()));
+        } else
+            System.out.format("%d %,d %,d\n", primes.size(), primes.limit(), primes.dup);
+    }
+
     public static void main(String ... args) throws IOException {
         
         try(PrimeFile primes = PrimeFile.append(new File("primes.dat"))) {
 
-            while(primes.buffers.size()<1024) {
+            while(primes.buffers.size()<1024*1024*4) {
                 primes.grow();
-                System.out.format("%d %,d %,d %,d\n", primes.size(), primes.limit(), primes.count(), primes.dup);
+                if((primes.buffers.size()%100)==0)
+                    log(primes);
             }
 
             System.out.println();
-            System.out.format("%d %,d %,d %,d\n", primes.size(), primes.limit(), primes.count(), primes.dup);
-
-            long[] stat = primes.stat();
-            System.out.println(Arrays.toString(stat));
+            log(primes);
         }
     }
 }
