@@ -41,7 +41,7 @@ class Sequences extends AbstractList<CompactSequence> implements RandomAccess {
       public <R> R process(long start, Target<? extends R> target) {
 
          if (start <= 5) {
-            // try 1,2,5
+            // try 2,3,5
             for (int i = 0; i < 3; ++i) {
                int p = factors[i];
                if (p >= start) {
@@ -50,6 +50,7 @@ class Sequences extends AbstractList<CompactSequence> implements RandomAccess {
                      return result;
                }
             }
+            start = 7;
          }
 
          // delegate to root sequence for p>5.

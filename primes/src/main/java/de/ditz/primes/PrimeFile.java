@@ -1,7 +1,9 @@
 package de.ditz.primes;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.nio.ByteBuffer;
 import java.util.AbstractList;
 import java.util.ArrayList;
@@ -83,7 +85,7 @@ public class PrimeFile implements Sequence, AutoCloseable {
         }
     };
 
-    final RootBuffer root = RootBuffer.build(17);
+    final RootBuffer root = RootBuffer.build(7);
 
     public PrimeFile(BufferedFile file) {
         this.file = file;
@@ -188,18 +190,35 @@ public class PrimeFile implements Sequence, AutoCloseable {
         return block;
     }
 
+    void dump(PrintWriter out) {
+        process(Target.all(out::println));
+    }
+
+    void dump(File file) throws FileNotFoundException {
+        try (PrintWriter out = new PrintWriter(file)) {
+            dump(out);
+        }
+    }
+
+    void dump(String file) throws FileNotFoundException {
+        dump(new File(file));
+    }
+
+
     public long count() {
         return buffers.stream().mapToLong(BufferedSequence::count).sum();
     }
 
     public static void main(String ... args) throws IOException {
         
-        try(PrimeFile primes = PrimeFile.append(new File("primes.dat"), BLOCK)) {
+        try(PrimeFile primes = PrimeFile.create(new File("primes.dat"), BLOCK)) {
 
             while(primes.limit()<200000) {
                 primes.grow();
                 System.out.format("%,d %,d\n", primes.limit(), primes.count());
             }
+
+            primes.dump("primes.log");
 
             System.out.println();
             System.out.format("%,d %,d\n", primes.limit(), primes.count());
