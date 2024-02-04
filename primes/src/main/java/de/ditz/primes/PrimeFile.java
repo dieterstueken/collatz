@@ -5,10 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.ByteBuffer;
-import java.util.AbstractList;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 /**
  * version:     $
@@ -26,12 +23,12 @@ public class PrimeFile implements Sequence, AutoCloseable {
 
     public static final int BLOCK = 1<<15;
 
-    public static PrimeFile create(File file, int block) throws IOException {
-        return new PrimeFile(BufferedFile.create(file.toPath(), block));
+    public static PrimeFile create(File file) throws IOException {
+        return new PrimeFile(BufferedFile.create(file.toPath(), BLOCK));
     }
 
-    public static PrimeFile append(File file, int block) throws IOException {
-        return new PrimeFile(BufferedFile.append(file.toPath(), block));
+    public static PrimeFile append(File file) throws IOException {
+        return new PrimeFile(BufferedFile.append(file.toPath(), BLOCK));
     }
 
     public static PrimeFile open(File file) throws IOException {
@@ -42,6 +39,8 @@ public class PrimeFile implements Sequence, AutoCloseable {
     }
 
     final BufferedFile file;
+
+    long dup = 0;
 
     final List<BufferedSequence> buffers = new AbstractList<> () {
         final List<BufferedSequence> cached = new ArrayList();
@@ -85,7 +84,7 @@ public class PrimeFile implements Sequence, AutoCloseable {
         }
     };
 
-    final RootBuffer root = RootBuffer.build(7);
+    final RootBuffer root = RootBuffer.build(17);
 
     public PrimeFile(BufferedFile file) {
         this.file = file;
@@ -160,6 +159,46 @@ public class PrimeFile implements Sequence, AutoCloseable {
         return result;
     }
 
+    class Sieve implements Target<BufferedSequence> {
+
+        BufferedSequence target;
+
+        long pow;
+
+        @Override
+        public BufferedSequence apply(long product) {
+            return target.drop(pow*product);
+        }
+
+        public BufferedSequence sieve(BufferedSequence target) {
+            this.target = target;
+            root.fill(target);
+            target.dup = 0;
+            BufferedSequence result = PrimeFile.this.process(root.prime+1, this::applyPrime);
+            dup += target.dup;
+            return result;
+        }
+
+        BufferedSequence applyPrime(long prime) {
+
+            if(prime*prime>=target.limit())
+                return target;
+
+            for(pow=prime; pow < target.limit()/root.prime; pow *= prime) {
+
+                if(pow>prime && pow>target.offset()) {
+                    target.drop(pow);
+                }
+
+                long factor = target.offset() / prime;
+                factor = Math.max(factor, prime+1);
+                root.process(factor, this);
+            }
+
+            return null;
+        }
+    }
+
     public void write(BufferedSequence sequence) {
         write(sequence.getBuffer());
     }
@@ -182,8 +221,10 @@ public class PrimeFile implements Sequence, AutoCloseable {
             len = file.block - base%file.block;
         }
 
+        Sieve sieve = new Sieve();
+
         BufferedSequence block = new BufferedSequence(base, (int)len);
-        root.sieve(block).sieve(this);
+        sieve.sieve(block);
 
         write(block);
 
@@ -211,17 +252,15 @@ public class PrimeFile implements Sequence, AutoCloseable {
 
     public static void main(String ... args) throws IOException {
         
-        try(PrimeFile primes = PrimeFile.create(new File("primes.dat"), BLOCK)) {
+        try(PrimeFile primes = PrimeFile.append(new File("primes.dat"))) {
 
-            while(primes.limit()<200000) {
+            while(primes.buffers.size()<1024) {
                 primes.grow();
-                System.out.format("%,d %,d\n", primes.limit(), primes.count());
+                System.out.format("%d %,d %,d %,d\n", primes.size(), primes.limit(), primes.count(), primes.dup);
             }
 
-            primes.dump("primes.log");
-
             System.out.println();
-            System.out.format("%,d %,d\n", primes.limit(), primes.count());
+            System.out.format("%d %,d %,d %,d\n", primes.size(), primes.limit(), primes.count(), primes.dup);
 
             long[] stat = primes.stat();
             System.out.println(Arrays.toString(stat));

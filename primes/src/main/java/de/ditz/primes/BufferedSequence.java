@@ -1,7 +1,7 @@
 package de.ditz.primes;
 
 import java.nio.ByteBuffer;
-import java.util.List;
+import java.util.*;
 
 /**
  * Created by IntelliJ IDEA.
@@ -15,6 +15,8 @@ public class BufferedSequence implements Sequence {
 
     // byte offset.
     final long base;
+
+    long dup = 0;
 
     final List<ByteSequence> sequences = new RandomList<>() {
 
@@ -137,8 +139,9 @@ public class BufferedSequence implements Sequence {
                 if (dropped != seq) {
                     buffer.put((int) pos, (byte) dropped);
                 } else {
-                    System.out.format("%5d = %2d * 30 + %2d %02x -> %02x %s\n",
-                            factor, pos, rem, seq, dropped, dropped == seq ? "!" : "");
+                    //System.out.format("%5d = %2d * 30 + %2d %02x -> %02x %s\n",
+                    //         factor, pos, rem, seq, dropped, dropped == seq ? "!" : "");
+                    ++dup;
                     return null;
                 }
             } else {
