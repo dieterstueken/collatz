@@ -38,7 +38,7 @@ public class RootBuffer extends BufferedSequence {
 
     @Override
     public String toString() {
-        return String.format("RootBuffer{%d:%d:%d}", prime, buffer.capacity(), this.limit());
+        return String.format("RootBuffer{%d:%d:%d}", prime, capacity(), limit());
     }
 
     /**

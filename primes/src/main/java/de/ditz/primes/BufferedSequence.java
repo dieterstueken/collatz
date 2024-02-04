@@ -1,7 +1,7 @@
 package de.ditz.primes;
 
 import java.nio.ByteBuffer;
-import java.util.*;
+import java.util.List;
 
 /**
  * Created by IntelliJ IDEA.
@@ -39,6 +39,10 @@ public class BufferedSequence implements Sequence {
     public BufferedSequence(long base, int size) {
         this.buffer = ByteBuffer.allocateDirect(size);
         this.base = base;
+    }
+
+    public String toString() {
+        return String.format("BufferedSequence{%d:%d:%d}", base, capacity(), offset());
     }
 
     public ByteBuffer getBuffer() {
