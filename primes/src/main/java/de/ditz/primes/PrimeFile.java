@@ -136,17 +136,11 @@ public class PrimeFile implements Sequence, AutoCloseable {
             if(prime*prime>=target.limit())
                 return target;
 
-            for(pow=prime; pow < target.limit(); pow = Math.multiplyExact(pow, prime)) {
+            long factor = target.offset() / prime;
+            factor = Math.max(factor, prime);
 
-                if(pow>prime && pow>target.offset()) {
-                    target.drop(pow);
-                }
-
-                long factor = target.offset() / prime;
-                factor = Math.max(factor, prime+1);
-                if(pow<target.limit()/factor)
-                    root.process(factor, this);
-            }
+            pow = prime;
+            root.process(factor, this);
 
             return null;
         }
@@ -196,9 +190,10 @@ public class PrimeFile implements Sequence, AutoCloseable {
     }
 
     public static void log(PrimeFile primes) {
-        if((primes.buffers.size()%1000)==0)
-            System.out.format("%d %,d %,d %s\n", primes.size(), primes.limit(), primes.dup, Arrays.toString(primes.stat()));
-        else
+        if((primes.buffers.size()%1000)==0) {
+            long[] stat = primes.stat();
+            System.out.format("%d %,d %,d %,d %s\n", primes.size(), primes.limit(), primes.dup, stat[8], Arrays.toString(primes.stat()));
+        } else
             System.out.format("%d %,d %,d\n", primes.size(), primes.limit(), primes.dup);
     }
 
