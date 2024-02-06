@@ -4,7 +4,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.Arrays;
+import java.util.*;
+import java.util.function.LongUnaryOperator;
 
 /**
  * version:     $
@@ -115,11 +116,130 @@ public class PrimeFile implements Sequence, AutoCloseable {
 
         BufferedSequence target;
 
-        long pow;
+        long factor;
 
-        @Override
-        public BufferedSequence apply(long product) {
-            return target.drop(Math.multiplyExact(pow, product));
+        class Pow implements Target<BufferedSequence> {
+            final int n;
+
+            final LongUnaryOperator pow;
+
+            Pow(int n, LongUnaryOperator pow) {
+                this.n = n;
+                this.pow = pow;
+            }
+
+            protected double offset() {
+                return StrictMath.pow(target.limit()*1.0/factor, 1.0/n);
+            }
+
+            @Override
+            public BufferedSequence apply(long p) {
+                return target.drop(factor * pow.applyAsLong(p));
+            }
+
+            boolean sieve() {
+
+                if(factor*pow(root.prime+1)>target.limit())
+                    return false;
+
+                double offset = offset();
+                offset = Math.min(offset, root.prime);
+                PrimeFile.this.process((long)(offset)+1, this);
+
+                // continue
+                return true;
+            }
+        }
+
+        final List<Pow> powers = new ArrayList<>();
+
+        {
+            powers.add(new Pow(0){
+                @Override
+                long pow(long p) {
+                    return 1;
+                }
+
+                @Override
+                protected double offset() {
+                    return Long.MAX_VALUE;
+                }
+
+                @Override
+                public BufferedSequence apply(long p) {
+                    target.drop(factor);
+                    // stop immediately
+                    return target;
+                }
+            });
+
+            powers.add(new Pow(1){
+                @Override
+                long pow(long p) {
+                    return p;
+                }
+
+                @Override
+                protected double offset() {
+                    return target.limit()*1.0/factor;
+                }
+
+                @Override
+                public BufferedSequence apply(long p) {
+                    return target.drop(p*factor);
+                }
+            });
+
+            powers.add(new Pow(2){
+                @Override
+                long pow(long p) {
+                    return p*p;
+                }
+
+                @Override
+                protected double offset() {
+                    return StrictMath.sqrt(target.limit()*1.0/factor);
+                }
+
+                @Override
+                public BufferedSequence apply(long p) {
+                    return target.drop(p*p*factor);
+                }
+            });
+        }
+
+        private Pow pow(int n) {
+            if(n<powers.size())
+                return powers.get(n);
+
+            if(n==0) {
+                return new Pow(0) {
+
+                    @Override
+                    long pow(long p) {
+                        return p;
+                    }
+                };
+            }
+
+            Pow ph = powers.get(n/2);
+
+            Pow pow = n%2==0 ? new Pow(n) {
+
+                @Override
+                long pow(long p) {
+                    return ph.pow(p*p);
+                }
+            } : new Pow(n) {
+
+                @Override
+                long pow(long p) {
+                    return p*ph.pow(p*p);
+                }
+            };
+
+            powers.add(pow);
+            return pow;
         }
 
         public BufferedSequence sieve(BufferedSequence target) {
@@ -131,7 +251,8 @@ public class PrimeFile implements Sequence, AutoCloseable {
             return result;
         }
 
-        BufferedSequence applyPrime(long prime) {
+        @Override
+        public BufferedSequence apply(long prime) {
 
             if(prime*prime>=target.limit())
                 return target;

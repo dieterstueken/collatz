@@ -24,11 +24,18 @@ public interface Target<R> {
       return p -> {process.accept(p); return null;};
    }
 
-   default Target<R> shift(long offset) {
-      return offset==0 ? this : p -> apply(p+offset);
-   }
-
    default Target<R> from(long start) {
-      return start<0 ? this : p -> p<start ? null : apply(p);
+      return new Target<>() {
+
+         @Override
+         public R apply(long factor) {
+            return factor<start ? null : Target.this.apply(factor);
+         }
+
+         @Override
+         public Target<R> from(long skip) {
+            return skip > start ? Target.super.from(skip) : this;
+         }
+      };
    }
 }

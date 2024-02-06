@@ -1,7 +1,7 @@
 package de.ditz.primes;
 
 import java.nio.ByteBuffer;
-import java.util.List;
+import java.util.*;
 
 /**
  * Created by IntelliJ IDEA.
@@ -9,7 +9,7 @@ import java.util.List;
  * Date: 14.01.24
  * Time: 14:43
  */
-public class BufferedSequence implements Sequence {
+public class BufferedSequence implements Sequence, Target<BufferedSequence> {
 
     final ByteBuffer buffer;
 
@@ -124,6 +124,11 @@ public class BufferedSequence implements Sequence {
 
         int m = 0xff & buffer.get((int)index);
         return Sequences.sequence(m);
+    }
+
+    @Override
+    public BufferedSequence apply(final long factor) {
+        return drop(factor);
     }
 
     /**
