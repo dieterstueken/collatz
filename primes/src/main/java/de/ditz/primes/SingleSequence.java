@@ -1,7 +1,6 @@
 package de.ditz.primes;
 
-import java.util.AbstractList;
-import java.util.RandomAccess;
+import java.util.*;
 
 public class SingleSequence extends CompactSequence {
 
@@ -45,22 +44,22 @@ public class SingleSequence extends CompactSequence {
 
    @Override
    public <R> R process(long start, Target<? extends R> process, long offset) {
-      return start+offset>factor ? null : process.apply(factor+offset);
+      return start+offset>factor ? null : process.process(factor+offset);
    }
 
    @Override
    public <R> R process(long start, Target<? extends R> target) {
-      return start>factor ? null : target.apply(factor);
+      return start>factor ? null : target.process(factor);
    }
 
    @Override
    public <R> R process(Target<? extends R> process, long offset) {
-      return process.apply(factor+offset);
+      return process.process(factor+offset);
    }
 
    @Override
    public <R> R process(Target<? extends R> process) {
-      return process.apply(factor);
+      return process.process(factor);
    }
 
    static class Singles extends AbstractList<SingleSequence> implements RandomAccess {

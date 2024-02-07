@@ -13,7 +13,7 @@ import java.util.Arrays;
  * modified by: $
  * modified on: $
  */
-public class PrimeFile implements Sequence, AutoCloseable {
+public class PrimeFile extends BufferedList implements AutoCloseable {
 
     /**
      * Block size in bytes.
@@ -37,27 +37,32 @@ public class PrimeFile implements Sequence, AutoCloseable {
         return new PrimeFile(BufferedFile.open(file.toPath(), block));
     }
 
-    long dup = 0;
+    long dups = 0;
 
-    final BufferCache buffers;
+    final BufferedFile file;
 
     final RootBuffer root = RootBuffer.build(17);
 
     public PrimeFile(BufferedFile file) {
-        this.buffers = new BufferCache(file);
+        super(new BufferCache(file));
+        this.file = file;
     }
 
     public int size() {
         return buffers.size();
     }
 
+    protected int blockSize() {
+        return file.blockSize();
+    }
+
     public long limit() {
-        return buffers.limit();
+        return ByteSequence.SIZE * file.length();
     }
 
     @Override
     public void close() throws IOException {
-        buffers.close();
+        file.close();
     }
 
     public long[] stat(long[] stat) {
@@ -73,62 +78,26 @@ public class PrimeFile implements Sequence, AutoCloseable {
         return stat(new long[9]);
     }
 
-    /**
-     * Emit primes to a target processor.
-     * The root block misses primes below 17, so the first block is substituted.
-     *
-     * @param start first prime to emit.
-     * @param target to preocess primes.
-     * @return a target result or null if exceeded.
-     */
-    @Override
-    public <R> R process(long start, Target<? extends R> target) {
-        R result = null;
-
-        // substitute root block
-        if(start<ByteSequence.SIZE) {
-            result = Sequences.PRIMES.process(start, target);
-            if(result!=null)
-                return result;
-
-            // continue after 29
-            start = 30;
-        }
-
-        if(start>limit())
-            return null;
-
-        final long block = buffers.blockSize()*ByteSequence.SIZE;
-
-        // find blocks to skip.
-        int n = (int)(start/block);
-
-        while(result == null && n<buffers.size()) {
-            BufferedSequence sequence = buffers.get(n++);
-            result = sequence.process(start, target);
-        }
-
-        return result;
-    }
 
     BufferedSequence grow() {
-        long base = buffers.length();
+        long base = file.length();
 
-        long len;
+        long len = blockSize();
 
         if(base==0) {
             // else we miss 31*31
             len = 8;
-        } else if(2*base<buffers.blockSize()) {
+        } else if(2*base<len) {
             len = base;
         } else {
-            len = buffers.blockSize() - base%buffers.blockSize();
+            // fill remaining part up to next block end
+            len -= base%len;
         }
 
         BufferedSequence block = new BufferedSequence(base, (int)len);
-        root.sieve(block).sieve(this);
+        dups += root.sieve(block).sieve(this).dups();
 
-        buffers.write(block);
+        file.write(block.getBuffer());
 
         return block;
     }
@@ -152,12 +121,18 @@ public class PrimeFile implements Sequence, AutoCloseable {
         return buffers.stream().mapToLong(BufferedSequence::count).sum();
     }
 
+    public double dups() {
+        long written = file.written();
+        return written==0 ? 0 : 100.0 * dups / written;
+    }
+
     public static void log(PrimeFile primes) {
+
         if((primes.buffers.size()%1000)==0) {
             long[] stat = primes.stat();
-            System.out.format("%d %,d %,d %,d %s\n", primes.size(), primes.limit(), primes.dup, stat[8], Arrays.toString(primes.stat()));
+            System.out.format("%d %,d %,d %,.1f%% %s\n", primes.size(), primes.limit(), stat[8], primes.dups(), Arrays.toString(primes.stat()));
         } else
-            System.out.format("%d %,d %,d\n", primes.size(), primes.limit(), primes.dup);
+            System.out.format("%d %,d %,.1f%%\n", primes.size(), primes.limit(), primes.dups());
     }
 
     public static void main(String ... args) throws IOException {

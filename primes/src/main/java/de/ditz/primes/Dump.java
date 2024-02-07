@@ -7,10 +7,12 @@ import java.util.Arrays;
 public class Dump {
 
    public static void log(PrimeFile primes) {
-       System.out.format("%d %,d %,d %,d\n", primes.size(), primes.limit(), primes.count(), primes.dup);
+       System.out.format("%d %,d %,d %,.1f%%\n", primes.size(), primes.limit(), primes.count(), primes.dups());
    }
 
    public static void main(String ... args) throws IOException {
+
+      BufferedSequence.debug = -1;
 
       try(PrimeFile primes = PrimeFile.create(new File("primes.dat"))) {
 

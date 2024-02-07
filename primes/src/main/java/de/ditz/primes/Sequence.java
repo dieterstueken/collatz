@@ -25,12 +25,19 @@ public interface Sequence {
         return new Sequence() {
 
             public <R> R process(Target<? extends R> target) {
-                return Sequence.this.process(target.start(start));
+                return Sequence.this.process(start, target);
             }
 
             @Override
             public <R> R process(long skip, Target<? extends R> target) {
-                return Sequence.this.process(target.start(Math.max(skip, start)));
+                return Sequence.this.process(Math.max(skip, start), target);
+            }
+
+            public Sequence from(long skip) {
+                if(skip>start)
+                    return Sequence.this.from(skip);
+                else
+                    return this;
             }
         };
     }

@@ -6,10 +6,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.AbstractList;
-import java.util.EnumSet;
-import java.util.RandomAccess;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created by IntelliJ IDEA.
@@ -24,6 +21,8 @@ public class BufferedFile extends AbstractList<ByteBuffer> implements RandomAcce
     final FileChannel channel;
 
     protected long length;
+
+    protected long written = 0;
 
     protected BufferedFile(FileChannel channel, int blockSize) throws IOException {
         this.blockSize = blockSize;
@@ -74,11 +73,15 @@ public class BufferedFile extends AbstractList<ByteBuffer> implements RandomAcce
     public void write(ByteBuffer buffer) {
         try {
             channel.position(length);
-            int written = channel.write(buffer);
+            written += channel.write(buffer);
             length = channel.size();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    public long written() {
+        return written;
     }
 
     public static BufferedFile open(Path path, int block) throws IOException {

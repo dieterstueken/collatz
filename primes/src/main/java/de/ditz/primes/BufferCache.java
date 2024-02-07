@@ -1,6 +1,5 @@
 package de.ditz.primes;
 
-import java.io.IOException;
 import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.List;
@@ -11,7 +10,7 @@ import java.util.List;
  * Date: 04.02.24
  * Time: 18:52
  */
-class BufferCache extends AbstractList<BufferedSequence> implements AutoCloseable {
+class BufferCache extends AbstractList<BufferedSequence> {
 
     final BufferedFile file;
 
@@ -67,20 +66,8 @@ class BufferCache extends AbstractList<BufferedSequence> implements AutoCloseabl
         return sequence;
     }
 
-    @Override
-    public void close() throws IOException {
-        file.close();
-    }
-
     private BufferedSequence read(int index) {
         long base = index * blockSize();
         return new BufferedSequence(base, file.get(index));
-    }
-
-    public void write(BufferedSequence buffer) {
-        if(buffer.base != file.length())
-            throw new IllegalArgumentException("unexpected buffer offset");
-
-        file.write(buffer.getBuffer());
     }
 }

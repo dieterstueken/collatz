@@ -13,8 +13,7 @@ public interface Target<R> {
     * @param factor to test.
     * @return some result.
     */
-   R apply(long factor);
-
+   R process(long factor);
 
    static Target<Boolean> until(LongPredicate process) {
       return p -> process.test(p) ? true : null;
@@ -28,8 +27,8 @@ public interface Target<R> {
       return new Target<>() {
 
          @Override
-         public R apply(long factor) {
-            return factor<start ? null : Target.this.apply(factor);
+         public R process(long factor) {
+            return factor<start ? null : Target.this.process(factor);
          }
 
          @Override

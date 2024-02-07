@@ -1,6 +1,6 @@
 package de.ditz.primes;
 
-import java.util.List;
+import java.util.*;
 
 /**
  * Created by IntelliJ IDEA.
@@ -141,7 +141,7 @@ abstract public class CompactSequence extends ByteSequence {
 
         // drop mask
         for(long values = sequence; result==null && values!=0; values >>= 8) {
-            result = process.apply(offset + (values & 0xff));
+            result = process.process(offset + (values & 0xff));
         }
 
         return result;

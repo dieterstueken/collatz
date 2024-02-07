@@ -1,7 +1,7 @@
 package de.ditz.primes;
 
 import java.nio.ByteBuffer;
-import java.util.*;
+import java.util.List;
 
 /**
  * Created by IntelliJ IDEA.
@@ -9,14 +9,14 @@ import java.util.*;
  * Date: 14.01.24
  * Time: 14:43
  */
-public class BufferedSequence implements Sequence, Target<BufferedSequence> {
+public class BufferedSequence implements Sequence, LimitedTarget<BufferedSequence> {
+
+    public static long debug = 0;
 
     final ByteBuffer buffer;
 
     // byte offset.
     final long base;
-
-    long dup = 0;
 
     final List<ByteSequence> sequences = new RandomList<>() {
 
@@ -37,7 +37,7 @@ public class BufferedSequence implements Sequence, Target<BufferedSequence> {
     }
 
     public BufferedSequence(long base, int size) {
-        this.buffer = ByteBuffer.allocateDirect(size);
+        this.buffer = ByteBuffer.allocate(size);
         this.base = base;
     }
 
@@ -53,6 +53,7 @@ public class BufferedSequence implements Sequence, Target<BufferedSequence> {
         return buffer.capacity();
     }
 
+    @Override
     public long offset() {
         return ByteSequence.SIZE * base;
     }
@@ -61,6 +62,7 @@ public class BufferedSequence implements Sequence, Target<BufferedSequence> {
         return ByteSequence.SIZE * capacity();
     }
 
+    @Override
     public long limit() {
         return ByteSequence.SIZE * (base + capacity());
     }
@@ -126,41 +128,55 @@ public class BufferedSequence implements Sequence, Target<BufferedSequence> {
         return Sequences.sequence(m);
     }
 
+    /**
+     * Target apply implementation works a bit different from drop().
+     *
+     * @param factor to test.
+     * @return null to continue and this to terminate.
+     */
     @Override
-    public BufferedSequence apply(final long factor) {
-        return drop(factor);
+    public BufferedSequence process(final long factor) {
+        if(drop(factor) == null)
+            return this;    // terminate processing
+        else
+            return null;    // continue processing
     }
 
     /**
      * Drop some factor from this sequence.
      * @param factor to drop.
-     * @return this if the factor is beyond the limit.
+     * @return true if hit, false if missed and null if beyond the limit.
      */
-    public BufferedSequence drop(final long factor) {
-        long pos = ByteSequence.count(factor) - base;
+    public Boolean drop(final long factor) {
+        long pos = ByteSequence.count(factor);
 
-        if(pos>=0) {
-            if(pos<capacity()) {
-                int seq = 0xff & buffer.get((int) pos);
-                long rem = factor % ByteSequence.SIZE;
-                int dropped = CompactSequence.expunge(seq, rem);
+        // below offset
+        if(pos<base)
+            return false;
 
-                if (dropped != seq) {
-                    buffer.put((int) pos, (byte) dropped);
-                } else {
-                    //System.out.format("%5d = %2d * 30 + %2d %02x -> %02x %s\n",
-                    //         factor, pos, rem, seq, dropped, dropped == seq ? "!" : "");
-                    ++dup;
-                    return null;
-                }
-            } else {
-                // done
-                return this;
-            }
-        }
+        pos -= base;
 
-        // continue
-        return null;
+        // done
+        if(pos>=capacity())
+            return null;
+
+       int seq = 0xff & buffer.get((int) pos);
+       long rem = factor % ByteSequence.SIZE;
+       int dropped = CompactSequence.expunge(seq, rem);
+       boolean hit = dropped != seq;
+
+       if(hit) {
+           buffer.put((int) pos, (byte) dropped);
+       }
+       
+       if(debug!=0 && (!hit && debug<0 || factor==debug || -factor == debug)) {
+           System.out.format("%5d = %2d * 30 + %2d %02x -> %02x %s\n",
+                    factor, pos, rem, seq, dropped, hit ? "" : "!");
+           return hit;
+       }
+
+       // continue
+        return hit;
     }
 
     public long[] stat(long[] stat) {

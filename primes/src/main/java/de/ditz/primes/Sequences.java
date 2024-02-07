@@ -1,8 +1,6 @@
 package de.ditz.primes;
 
-import java.util.AbstractList;
-import java.util.List;
-import java.util.RandomAccess;
+import java.util.*;
 
 class Sequences extends AbstractList<CompactSequence> implements RandomAccess {
 
@@ -45,7 +43,7 @@ class Sequences extends AbstractList<CompactSequence> implements RandomAccess {
             for (int i = 0; i < 3; ++i) {
                int p = factors[i];
                if (p >= start) {
-                  R result = target.apply(p);
+                  R result = target.process(p);
                   if (result != null)
                      return result;
                }
