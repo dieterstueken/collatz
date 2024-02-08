@@ -79,7 +79,7 @@ public class PrimeFile extends BufferedList implements AutoCloseable {
     }
 
 
-    BufferedSequence grow() {
+    public BufferedSequence grow() {
         long base = file.length();
 
         long len = blockSize();
@@ -112,7 +112,7 @@ public class PrimeFile extends BufferedList implements AutoCloseable {
         }
     }
 
-    void dump(String file) throws FileNotFoundException {
+    public void dump(String file) throws FileNotFoundException {
         dump(new File(file));
     }
 

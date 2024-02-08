@@ -1,4 +1,6 @@
-package de.ditz.primes;
+package de.ditz.primes.main;
+
+import de.ditz.primes.PrimeFile;
 
 import java.io.File;
 import java.io.IOException;

@@ -1,4 +1,6 @@
-package de.ditz.primes;
+package de.ditz.primes.main;
+
+import de.ditz.primes.PrimeFile;
 
 import java.io.File;
 import java.io.IOException;
@@ -12,7 +14,7 @@ public class Dump {
 
    public static void main(String ... args) throws IOException {
 
-      BufferedSequence.debug = -1;
+      //BufferedSequence.debug = -1;
 
       try(PrimeFile primes = PrimeFile.create(new File("primes.dat"))) {
 
