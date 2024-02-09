@@ -20,7 +20,8 @@ public class PrimeFile extends BufferedList implements AutoCloseable {
      * A single byte of compacted primes represents 2*3*5=30 numbers.
      */
 
-    public static final int BLOCK = 1<<15;
+    public static int BLOCK = 1<<15;
+    public static int ROOT = 17;
 
     public static PrimeFile create(File file) throws IOException {
         return new PrimeFile(BufferedFile.create(file.toPath(), BLOCK));
@@ -41,7 +42,7 @@ public class PrimeFile extends BufferedList implements AutoCloseable {
 
     final BufferedFile file;
 
-    final RootBuffer root = RootBuffer.build(17);
+    final RootBuffer root = RootBuffer.build(ROOT);
 
     public PrimeFile(BufferedFile file) {
         super(new BufferCache(file));
