@@ -16,6 +16,14 @@ public class BufferedList implements Sequence {
         this.buffers = buffers;
     }
 
+    public int size() {
+        return buffers.size();
+    }
+
+    public BufferedSequence get(int index) {
+        return buffers.get(index);
+    }
+
     public long limit() {
         return buffers.isEmpty() ? 0 : buffers.getLast().limit();
     }
@@ -41,7 +49,7 @@ public class BufferedList implements Sequence {
 
     /**
      * Emit primes to a target processor.
-     * The root block misses primes below 17, so the first block is substituted.
+     * The root block misses primes below 17.
      *
      * @param start first prime to emit.
      * @param target to preocess primes.
@@ -49,17 +57,6 @@ public class BufferedList implements Sequence {
      */
     @Override
     public <R> R process(long start, Target<? extends R> target) {
-        R result = null;
-
-        // substitute root block
-        if(start<ByteSequence.SIZE) {
-            result = Sequences.PRIMES.process(start, target);
-            if(result!=null)
-                return result;
-
-            // continue after 29
-            start = 30;
-        }
 
         if(start>limit())
             return null;
@@ -69,11 +66,28 @@ public class BufferedList implements Sequence {
         // find blocks to skip.
         int n = (int)(start/block);
 
-        while(result == null && n<buffers.size()) {
+        // first partial block
+        R result = null;
+        if(start>n*block) {
             BufferedSequence sequence = buffers.get(n++);
             result = sequence.process(start, target);
         }
 
+        while(result == null && n<buffers.size()) {
+            BufferedSequence sequence = buffers.get(n++);
+            result = sequence.process(target);
+        }
+
         return result;
+    }
+
+
+    public long[] stat(long[] stat) {
+
+        for (BufferedSequence buffer : buffers) {
+            buffer.stat(stat);
+        }
+
+        return stat;
     }
 }

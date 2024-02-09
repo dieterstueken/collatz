@@ -109,7 +109,7 @@ public class BufferedSequence implements Sequence, LimitedTarget<BufferedSequenc
         long offset = (index + base) * ByteSequence.SIZE;
 
         // process possible first partial sequence
-        if(start>0) {
+        if(start>offset) {
             ByteSequence sequence = sequence(index++);
             if(sequence==null)
                 // already exceeded

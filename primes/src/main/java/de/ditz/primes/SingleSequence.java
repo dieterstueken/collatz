@@ -5,7 +5,7 @@ import java.util.RandomAccess;
 
 public class SingleSequence extends CompactSequence {
 
-   public static final ByteSequence EMPTY = new EmptySequence();
+   public static final CompactSequence EMPTY = new EmptySequence();
 
    final Integer factor;
 
@@ -39,18 +39,18 @@ public class SingleSequence extends CompactSequence {
    }
 
    @Override
-   public ByteSequence from(long start) {
+   public CompactSequence from(long start) {
       return start>this.factor ? EMPTY : this;
    }
 
    @Override
-   public ByteSequence expunge(long prime) {
+   public CompactSequence expunge(long prime) {
       return prime == this.factor ? EMPTY : this;
    }
 
    @Override
    public <R> R process(long start, Target<? extends R> process, long offset) {
-      return start+offset>factor ? null : process.process(factor+offset);
+      return start-offset>factor ? null : process.process(factor+offset);
    }
 
    @Override
@@ -117,12 +117,12 @@ public class SingleSequence extends CompactSequence {
       }
 
       @Override
-      public ByteSequence expunge(long prime) {
+      public CompactSequence expunge(long prime) {
          return this;
       }
 
       @Override
-      public ByteSequence from(long start) {
+      public CompactSequence from(long start) {
          return this;
       }
 

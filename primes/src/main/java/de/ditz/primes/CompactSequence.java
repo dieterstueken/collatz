@@ -116,7 +116,7 @@ abstract public class CompactSequence extends ByteSequence {
      * @param factor to expunge.
      * @return a sequence without the given factor, or this.
      */
-    abstract public ByteSequence expunge(long factor);
+    abstract public CompactSequence expunge(long factor);
 
     @Override
     public <R> R process(long start, Target<? extends R> target) {
@@ -128,7 +128,7 @@ abstract public class CompactSequence extends ByteSequence {
      * @param start limit of first prime.
      * @return a truncated ByteSequence.
      */
-    abstract public ByteSequence from(long start);
+    abstract public CompactSequence from(long start);
 
     @Override
     public int count(long limit) {

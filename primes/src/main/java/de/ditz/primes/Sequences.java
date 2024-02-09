@@ -16,7 +16,7 @@ class Sequences extends AbstractList<CompactSequence> implements RandomAccess {
       return ALL.singles.get(index);
    }
 
-   public static ByteSequence root() {
+   public static CompactSequence root() {
       return sequence(ByteSequence.ROOT);
    }
 
@@ -25,7 +25,7 @@ class Sequences extends AbstractList<CompactSequence> implements RandomAccess {
     */
    public static final ByteSequence PRIMES = new ByteSequence() {
 
-      final Integer[] factors = {2,3,5,7,13,17,19,23,29};
+      final Integer[] factors = {2,3,5,7,11,13,17,19,23,29};
 
       @Override
       public int size() {
@@ -114,7 +114,7 @@ class Sequences extends AbstractList<CompactSequence> implements RandomAccess {
          final int size = Integer.bitCount(mask);
 
          @Override
-         public ByteSequence expunge(long factor) {
+         public CompactSequence expunge(long factor) {
             int m = CompactSequence.expunge(mask, factor);
             return m==mask ? this : sequences[m];
          }
@@ -125,7 +125,7 @@ class Sequences extends AbstractList<CompactSequence> implements RandomAccess {
          }
 
          @Override
-         public ByteSequence from(long start) {
+         public CompactSequence from(long start) {
 
             if(start<=7) {
                if(start>1 && mask%2!=0) // drop 1
