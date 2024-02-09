@@ -32,10 +32,6 @@ public class RootBuffer extends BufferedSequence {
         this.buffers = new Slices(root.capacity());
     }
 
-    public Sieve sieve(BufferedSequence sequence) {
-        return new Sieve(this, sequence).reset();
-    }
-
     @Override
     public String toString() {
         return String.format("RootBuffer{%d:%d:%d}", prime, capacity(), limit());
@@ -87,7 +83,9 @@ public class RootBuffer extends BufferedSequence {
 
     private RootBuffer grow(long prime) {
         RootBuffer grown = new RootBuffer(this, (int) prime);
-        sieve(grown).dropPrimes(0, prime);
+        fill(grown);
+        // drop all n*prime including 1*prime itself
+        this.process(p -> grown.process(p*prime));
         return grown;
     }
     

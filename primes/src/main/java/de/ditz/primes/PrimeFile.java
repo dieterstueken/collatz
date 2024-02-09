@@ -135,7 +135,7 @@ public class PrimeFile implements Sequence, AutoCloseable {
         }
 
         BufferedSequence block = new BufferedSequence(base, (int)len);
-        dups += root.sieve(block).sieve(this).dups();
+        dups += new Sieve(root, block).reset().sieve(this).dups();
 
         // restore initial sequence
         if(base==0)
