@@ -119,23 +119,27 @@ public class PrimeFile implements Sequence, AutoCloseable {
         return buffers.process(start, target);
     }
 
+    Sieve sieve() {
+        return new Sieve(root, this);
+    }
+
     public BufferedSequence grow() {
         long base = file.length();
 
         long len = file.blockSize();
 
         if(base==0) {
-            // else we miss 31*31
-            len = 8;
+            // else we miss 31*7
+            len = 4;
         } else if(2*base<len) {
             len = base;
         } else {
             // fill remaining part up to next block end
             len -= base%len;
         }
-
+        
         BufferedSequence block = new BufferedSequence(base, (int)len);
-        dups += new Sieve(root, block).reset().sieve(this).dups();
+        dups += sieve().sieve(block).dups();
 
         // restore initial sequence
         if(base==0)

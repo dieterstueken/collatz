@@ -1,66 +1,96 @@
 package de.ditz.primes;
 
+import java.io.File;
+import java.io.IOException;
+
 public class Sieve {
 
-   final RootBuffer root;
+    final RootBuffer root;
 
-   final BufferedSequence target;
+    final Sequence primes;
 
-   final Target<BufferedSequence> drop = this::dropFactor;
+    BufferedSequence target;
 
-   final Target<BufferedSequence> sieve = this::sieve;
+    long product;
 
-   long prime;
+    int dups;
 
-   int dups;
+    public Sieve(RootBuffer root, Sequence primes) {
+        this.root = root;
+        this.primes = primes;
+    }
 
-   public Sieve(RootBuffer root, BufferedSequence target) {
-      this.root = root;
-      this.target = target;
-   }
+    public Sieve sieve(BufferedSequence target) {
+        this.target = target;
+        root.fill(target);
 
-   public Sieve reset() {
-      dups = 0;
-      root.fill(target);
-      return this;
-   }
+        dups = 0;
+        product = 1;
+        primes.process(root.prime + 1, this::sieve);
 
-   public int dups() {
-      return dups;
-   }
+        return this;
+    }
 
-   private BufferedSequence dropFactor(long factor) {
-      Boolean dropped = target.drop(factor*prime);
-      if(dropped == null)
-         return target;    // terminate processing
+    public int dups() {
+        return dups;
+    }
 
-      if(dropped==false)
-         ++dups;
+    BufferedSequence drop(long p) {
+        Boolean dropped = target.drop(p);
+        if (dropped == null)
+            return target;    // terminate processing
 
-      return null; // continue processing
-   }
+        if (!dropped)
+            ++dups;
 
-   public BufferedSequence dropPrimes(long start, long prime) {
-      this.prime = prime;
-      return root.process(start, drop);
-   }
+        return null; // continue processing
+    }
 
-   public Sieve sieve(Sequence primes) {
-      primes.process(root.prime+1, sieve);
-      return this;
-   }
+    BufferedSequence product(long p) {
+        return drop(p * product);
+    }
 
-   public BufferedSequence sieve(long prime) {
-      long factor = target.offset() / prime;
-      if(factor<prime)
-         factor = prime;
+    BufferedSequence sieve(long prime) {
 
-      if(factor*prime>target.limit())
-         return target;
+         if(product>1 && product*prime>target.offset())
+           drop(product*prime);
 
-      dropPrimes(factor, prime);
+        if(product * prime*prime >= target.limit())
+            return target;
 
-      // continue with further primes.
-      return null;
-   }
+        if(product*prime>target.limit())
+           return null;
+
+        long saved = this.product;
+        product *= prime;
+
+        long start = (target.offset() + product - 1) / product;
+        start = Math.max(start, prime+1);
+        primes.process(start, this::product);
+
+        primes.process(prime, this::sieve);
+
+        product = saved;
+
+        // continue with further primes.
+        return null;
+    }
+
+    public static void main(String... args) throws IOException {
+
+        //PrimeFile.ROOT = 5;
+        BufferedSequence.debug = -1;
+
+        try (PrimeFile primes = PrimeFile.create(new File("primes.dat"))) {
+
+            while (primes.size() < 1024 * 1024 * 4) {
+                primes.grow();
+                if((primes.size()%100)==0)
+                    PrimeFile.log(primes);
+            }
+
+            System.out.println();
+            PrimeFile.log(primes);
+        }
+    }
 }
