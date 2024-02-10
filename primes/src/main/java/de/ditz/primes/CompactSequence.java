@@ -1,6 +1,6 @@
 package de.ditz.primes;
 
-import java.util.*;
+import java.util.List;
 
 /**
  * Created by IntelliJ IDEA.
@@ -129,6 +129,18 @@ abstract public class CompactSequence extends ByteSequence {
      * @return a truncated ByteSequence.
      */
     abstract public ByteSequence from(long start);
+
+    @Override
+    public int count(long limit) {
+        int count = 0;
+        if(limit>0) {
+            count = size();
+            if(count<ByteSequence.SIZE)
+                count -= from(limit).size();
+        }
+
+        return count;
+    }
 
     @Override
     public <R> R process(long start, Target<? extends R> process, long offset) {

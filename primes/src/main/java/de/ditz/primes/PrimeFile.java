@@ -116,11 +116,6 @@ public class PrimeFile extends BufferedList implements AutoCloseable {
         dump(new File(file));
     }
 
-
-    public long count() {
-        return buffers.stream().mapToLong(BufferedSequence::count).sum();
-    }
-
     public double dups() {
         long written = file.written();
         return written==0 ? 0 : 100.0 * dups / written;

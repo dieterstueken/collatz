@@ -20,6 +20,21 @@ public class BufferedList implements Sequence {
         return buffers.isEmpty() ? 0 : buffers.getLast().limit();
     }
 
+    public long count() {
+        return count(limit());
+    }
+
+    public long count(long limit) {
+        long count = 0;
+
+        for (BufferedSequence buffer : buffers) {
+            if (buffer.offset() >= limit)
+                break;
+            count += buffer.count(limit);
+        }
+        return count;
+    }
+
     protected int blockSize() {
         return buffers.isEmpty() ? 0 : buffers.getFirst().capacity();
     }

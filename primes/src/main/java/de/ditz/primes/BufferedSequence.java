@@ -68,7 +68,23 @@ public class BufferedSequence implements Sequence, LimitedTarget<BufferedSequenc
     }
 
     public long count() {
-        return sequences.stream().mapToInt(ByteSequence::size).sum();
+        return sequences.stream().parallel().mapToInt(ByteSequence::size).sum();
+    }
+
+    public long count(long limit) {
+        if(limit>=limit())
+            return count();
+
+        limit -= offset();
+        int l = (int) (limit / ByteSequence.SIZE);
+
+        // fast track full sequences.
+        long count = sequences.subList(0, l).stream().parallel().mapToInt(ByteSequence::size).sum();
+
+        // possible last fragment
+        count += sequences.get(l).count(limit%ByteSequence.SIZE);
+
+        return count;
     }
 
     /**
@@ -148,7 +164,7 @@ public class BufferedSequence implements Sequence, LimitedTarget<BufferedSequenc
      * @return true if hit, false if missed and null if beyond the limit.
      */
     public Boolean drop(final long factor) {
-        long pos = ByteSequence.count(factor);
+        long pos = ByteSequence.indexOf(factor);
 
         // below offset
         if(pos<base)

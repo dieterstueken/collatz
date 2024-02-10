@@ -17,6 +17,8 @@ abstract public class ByteSequence extends RandomList<Integer> implements Sequen
     */
    abstract public int size();
 
+   abstract public int count(long limit);
+
    public <R> R process(long start, Target<? extends R> process, long offset) {
       return null;
    }
@@ -30,7 +32,7 @@ abstract public class ByteSequence extends RandomList<Integer> implements Sequen
     * @param offset to seek.
     * @return the index of the byte sequence.
     */
-   public static long count(long offset) {
+   public static long indexOf(long offset) {
       return offset<0 ? 0 : offset/SIZE;
    }
 

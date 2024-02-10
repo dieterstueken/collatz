@@ -1,6 +1,8 @@
 package de.ditz.primes;
 
-import java.util.*;
+import java.util.AbstractList;
+import java.util.List;
+import java.util.RandomAccess;
 
 class Sequences extends AbstractList<CompactSequence> implements RandomAccess {
 
@@ -28,6 +30,17 @@ class Sequences extends AbstractList<CompactSequence> implements RandomAccess {
       @Override
       public int size() {
          return factors.length;
+      }
+
+      @Override
+      public int count(long limit) {
+         if(limit<2)
+            return 0;
+
+         if(limit>29)
+            return size();
+
+         return (int) stream().filter(p->p<limit).count();
       }
 
       @Override

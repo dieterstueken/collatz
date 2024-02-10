@@ -15,6 +15,8 @@ public interface Target<R> {
     */
    R process(long factor);
 
+   Target<Long> NEXT = p->p;
+
    static Target<Boolean> until(LongPredicate process) {
       return p -> process.test(p) ? true : null;
    }

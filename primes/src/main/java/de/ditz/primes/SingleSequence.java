@@ -1,6 +1,7 @@
 package de.ditz.primes;
 
-import java.util.*;
+import java.util.AbstractList;
+import java.util.RandomAccess;
 
 public class SingleSequence extends CompactSequence {
 
@@ -20,6 +21,11 @@ public class SingleSequence extends CompactSequence {
    @Override
    public int size() {
       return 1;
+   }
+
+   @Override
+   public int count(long limit) {
+      return limit<this.factor ? 0 : 1;
    }
 
    @Override
@@ -102,6 +108,11 @@ public class SingleSequence extends CompactSequence {
        */
       @Override
       public int size() {
+         return 0;
+      }
+
+      @Override
+      public int count(long limit) {
          return 0;
       }
 
