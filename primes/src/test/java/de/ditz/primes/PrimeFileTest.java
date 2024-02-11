@@ -24,9 +24,7 @@ class PrimeFileTest {
         PrimeFile.BLOCK = block;
 
         try(PrimeFile primes = PrimeFile.create(tmpFile)) {
-            while(primes.limit()<(1<<22)) {
-                primes.grow();
-            }
+            primes.growTo(1<<22);
 
             assertEquals(0, primes.count(2));
             assertEquals(1, primes.count(3));

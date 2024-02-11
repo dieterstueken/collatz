@@ -2,32 +2,24 @@ package de.ditz.primes;
 
 public class Sieve {
 
-   final RootBuffer root;
+   final PrimeFile primes;
 
-   final BufferedSequence target;
-
-   final Target<BufferedSequence> drop = this::dropFactor;
-
-   final Target<BufferedSequence> sieve = this::sieve;
+   BufferedSequence target;
 
    long prime;
 
    int dups;
 
-   public Sieve(RootBuffer root, BufferedSequence target) {
-      this.root = root;
-      this.target = target;
-   }
-
-   public Sieve reset() {
-      dups = 0;
-      root.fill(target);
-      return this;
+   public Sieve(PrimeFile primes) {
+      this.primes = primes;
    }
 
    public int dups() {
       return dups;
    }
+
+
+   final Target<BufferedSequence> drop = this::dropFactor;
 
    private BufferedSequence dropFactor(long factor) {
       Boolean dropped = target.drop(factor*prime);
@@ -40,25 +32,28 @@ public class Sieve {
       return null; // continue processing
    }
 
-   public BufferedSequence dropPrimes(long start, long prime) {
-      this.prime = prime;
-      return root.process(start, drop);
-   }
+   public Sieve sieve(BufferedSequence target) {
+      this.target = target;
+      this.dups = 0;
+      primes.root.fill(target);
 
-   public Sieve sieve(Sequence primes) {
-      primes.process(root.prime+1, sieve);
+      primes.process(primes.root.prime+1, sieve);
+
       return this;
    }
 
-   public BufferedSequence sieve(long prime) {
-      long factor = target.offset() / prime;
-      if(factor<prime)
-         factor = prime;
+   final Target<BufferedSequence> sieve = this::sieve;
 
-      if(factor*prime>target.limit())
+   public BufferedSequence sieve(long prime) {
+      long start = (target.offset() + prime-1) / prime;
+      if(start<prime)
+         start = prime;
+
+      if(start*prime>target.limit())
          return target;
 
-      dropPrimes(factor, prime);
+      this.prime = prime;
+      primes.root.process(start, drop);
 
       // continue with further primes.
       return null;

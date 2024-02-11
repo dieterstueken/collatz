@@ -4,7 +4,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.Arrays;
+import java.util.function.Predicate;
 
 /**
  * version:     $
@@ -21,7 +21,7 @@ public class PrimeFile implements Sequence, AutoCloseable {
      */
 
     public static int BLOCK = 1<<15;
-    public static int ROOT = 17;
+    public static int ROOT = 19;
 
     public static PrimeFile create(File file) throws IOException {
         return open(BufferedFile.create(file.toPath(), BLOCK));
@@ -119,7 +119,22 @@ public class PrimeFile implements Sequence, AutoCloseable {
         return buffers.process(start, target);
     }
 
-    public BufferedSequence grow() {
+    public PrimeFile grow(Predicate<BufferedSequence> until) {
+
+        while(true) {
+            if(until.test(grow()))
+                break;
+        }
+
+        return this;
+    }
+
+    public PrimeFile growTo(long limit) {
+        grow(buffer -> limit()>limit);
+        return this;
+    }
+
+    private BufferedSequence grow() {
         long base = file.length();
 
         long len = file.blockSize();
@@ -135,7 +150,7 @@ public class PrimeFile implements Sequence, AutoCloseable {
         }
 
         BufferedSequence block = new BufferedSequence(base, (int)len);
-        dups += new Sieve(root, block).reset().sieve(this).dups();
+        dups += new Sieve(this).sieve(block).dups();
 
         // restore initial sequence
         if(base==0)
@@ -171,22 +186,23 @@ public class PrimeFile implements Sequence, AutoCloseable {
 
     public static void log(PrimeFile primes) {
 
-        if((primes.size()%1000)==0) {
-            long[] stat = primes.stat();
-            System.out.format("%d %,d %,d %,.1f%% %s\n", primes.size(), primes.limit(), stat[8], primes.dups(), Arrays.toString(primes.stat()));
-        } else
-            System.out.format("%d %,d %,.1f%%\n", primes.size(), primes.limit(), primes.dups());
+        //if((primes.size()%1000)==0) {
+        //    long[] stat = primes.stat();
+        //    System.out.format("%d %,d %,d %,.1f%% %s\n", primes.size(), primes.limit(), stat[8], primes.dups(), Arrays.toString(primes.stat()));
+        //} else
+
+        System.out.format("%d %,d %,.1f%%\n", primes.size(), primes.limit(), primes.dups());
     }
 
     public static void main(String ... args) throws IOException {
         
-        try(PrimeFile primes = PrimeFile.append(new File("primes.dat"))) {
+        try(PrimeFile primes = PrimeFile.create(new File("primes.dat"))) {
 
-            while(primes.size()<1024*1024*4) {
-                primes.grow();
+            primes.grow(buffer -> {
                 if((primes.size()%100)==0)
                     log(primes);
-            }
+                return primes.size()>=1024*1024*4;
+            });
 
             System.out.println();
             log(primes);

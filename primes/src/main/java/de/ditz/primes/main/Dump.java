@@ -8,7 +8,7 @@ import java.util.Arrays;
 
 public class Dump {
 
-   public static void log(PrimeFile primes) {
+   static void log(PrimeFile primes) {
        System.out.format("%d %,d %,d %,.1f%%\n", primes.size(), primes.limit(), primes.count(), primes.dups());
    }
 
@@ -18,10 +18,11 @@ public class Dump {
 
       try(PrimeFile primes = PrimeFile.create(new File("primes.dat"))) {
 
-         while(primes.limit()<200000) {
-            primes.grow();
+         primes.grow(buffer -> {
             log(primes);
-         }
+            return primes.limit()>200000;
+         });
+
 
          primes.dump("primes.txt");
 
