@@ -13,52 +13,52 @@ import java.util.function.Predicate;
  * Date: 11.02.24
  * Time: 14:20
  */
-public class Time implements AutoCloseable {
-
+public class Time implements Predicate<BufferedSequence> {
 
     final PrimeFile primes;
 
-    long start;
+    long start = System.currentTimeMillis();
 
-    Time(PrimeFile primes) {
+    final double duration;
+
+    long dups = 0;
+
+    Time(PrimeFile primes, double duration) {
         this.primes = primes;
+        this.duration = duration;
     }
 
     @Override
-    public void close() throws Exception {
-        primes.close();
-    }
+    public boolean test(BufferedSequence buffer) {
 
-    void log() {
-        long elapsed = System.currentTimeMillis() - start;
-        System.out.format("%.1f %d %,d %,d %,.1f%%\n", elapsed / 1000.0, primes.size(), primes.limit(), primes.count(), primes.dups());
-    }
+        double elapsed = (System.currentTimeMillis() - start) / 1000D;
 
-    Predicate<BufferedSequence> until(int seconds) {
+        boolean done = elapsed >= duration;
 
-        return buffer -> {
-            if((primes.size()%100)==0)
-                log();
-            return System.currentTimeMillis() > start + 1000*seconds;
-        };
-    }
+        dups += buffer.dups();
 
-    public void grow(int seconds) {
-        start = System.currentTimeMillis();
-        primes.grow(until(seconds));
-        System.out.println();
-        log();
-        System.out.format("total: %,16d\n", primes.size());
+        if ((primes.size() % 100) == 0 || done) {
+            double duprate = 100D * buffer.dups() / buffer.size();
+
+            System.out.format("%4.1f %5d %,14d %,12d %4.1f%%\n", elapsed, primes.size(),
+                    primes.limit(), primes.count(), duprate);
+
+            if(done) {
+                System.out.println();
+                System.out.format("total: %,16d %,.1f%%\n", primes.size(), 100D * dups / primes.size());
+            }
+        }
+
+        return done;
     }
 
     public static void main(String ... args) throws IOException {
 
         File file = File.createTempFile( "primes", ".dat");
-        PrimeFile.ROOT = 23;
+        //PrimeFile.ROOT = 23;
 
         try(PrimeFile primes = PrimeFile.create(file)) {
-            new Time(primes).grow(30);
+            primes.grow(new Time(primes, 30));
         }
     }
-
 }

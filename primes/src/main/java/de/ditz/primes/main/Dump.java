@@ -1,35 +1,50 @@
 package de.ditz.primes.main;
 
+import de.ditz.primes.BufferedSequence;
 import de.ditz.primes.PrimeFile;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.function.Predicate;
 
-public class Dump {
+public class Dump implements Predicate<BufferedSequence> {
 
-   static void log(PrimeFile primes) {
-       System.out.format("%d %,d %,d %,.1f%%\n", primes.size(), primes.limit(), primes.count(), primes.dups());
-   }
+    final PrimeFile primes;
 
-   public static void main(String ... args) throws IOException {
+    final long limit;
 
-      //BufferedSequence.debug = -1;
+    long dups;
 
-      try(PrimeFile primes = PrimeFile.create(new File("primes.dat"))) {
+    public Dump(PrimeFile primes, long limit) {
+        this.primes = primes;
+        this.limit = limit;
+    }
 
-         primes.grow(buffer -> {
-            log(primes);
-            return primes.limit()>200000;
-         });
+    @Override
+    public boolean test(BufferedSequence buffer) {
+
+        boolean done =  primes.limit() > limit;
+
+        System.out.format("%5d %,10d %,8d %,5.1f%%\n", buffer.base, buffer.limit(), buffer.count(), 100D * buffer.dups() / buffer.size());
+
+        if(done) {
+            System.out.println();
+            long[] stat = primes.stat();
+                System.out.println(Arrays.toString(stat));
+        }
+
+        return done;
+    }
 
 
-         primes.dump("primes.txt");
+    public static void main(String... args) throws IOException {
 
-         System.out.println();
+        //BufferedSequence.debug = -1;
 
-         long[] stat = primes.stat();
-         System.out.println(Arrays.toString(stat));
-      }
-   }
+        try (PrimeFile primes = PrimeFile.create(new File("primes.dat"))) {
+            primes.grow(new Dump(primes, 200000));
+            primes.dump("primes.txt");
+        }
+    }
 }

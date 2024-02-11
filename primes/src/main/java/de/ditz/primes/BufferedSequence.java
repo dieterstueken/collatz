@@ -16,7 +16,9 @@ public class BufferedSequence implements Sequence, LimitedTarget<BufferedSequenc
     final ByteBuffer buffer;
 
     // byte offset.
-    final long base;
+    public final long base;
+
+    int dups = 0;
 
     final List<ByteSequence> sequences = new RandomList<>() {
 
@@ -36,8 +38,8 @@ public class BufferedSequence implements Sequence, LimitedTarget<BufferedSequenc
         this.base = base;
     }
 
-    public BufferedSequence(long base, int size) {
-        this.buffer = ByteBuffer.allocate(size);
+    public BufferedSequence(long base, int capacity) {
+        this.buffer = ByteBuffer.allocate(capacity);
         this.base = base;
     }
 
@@ -152,10 +154,18 @@ public class BufferedSequence implements Sequence, LimitedTarget<BufferedSequenc
      */
     @Override
     public BufferedSequence process(final long factor) {
-        if(drop(factor) == null)
+        Boolean dropped = drop(factor);
+        if(dropped == null)
             return this;    // terminate processing
-        else
-            return null;    // continue processing
+
+        if(dropped==false)
+            ++dups;
+
+        return null; // continue processing
+    }
+
+    public int dups() {
+        return dups;
     }
 
     /**

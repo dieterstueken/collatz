@@ -43,8 +43,6 @@ public class PrimeFile implements Sequence, AutoCloseable {
         return new PrimeFile(file);
     }
 
-    long dups = 0;
-
     final RootBuffer root = RootBuffer.build(ROOT);
 
     final BufferedFile file;
@@ -99,7 +97,7 @@ public class PrimeFile implements Sequence, AutoCloseable {
      * The root block misses primes below 17, so the first block is substituted.
      *
      * @param start first prime to emit.
-     * @param target to preocess primes.
+     * @param target to process primes.
      * @return a target result or null if exceeded.
      */
     @Override
@@ -119,7 +117,7 @@ public class PrimeFile implements Sequence, AutoCloseable {
         return buffers.process(start, target);
     }
 
-    public PrimeFile grow(Predicate<BufferedSequence> until) {
+    public PrimeFile slow(Predicate<BufferedSequence> until) {
 
         while(true) {
             if(until.test(grow()))
@@ -127,6 +125,32 @@ public class PrimeFile implements Sequence, AutoCloseable {
         }
 
         return this;
+    }
+
+    private SieveTask newTask() {
+        Sieve sieve = new Sieve(this);
+        return new SieveTask(sieve);
+    }
+
+    public PrimeFile grow(Predicate<BufferedSequence> until) {
+        return new SieveTasks(this).run(until);
+    }
+
+    public int bufferSize(long base) {
+
+        int len = file.blockSize();
+
+        if(base==0) {
+            // else we miss 31*31
+            len = 8;
+        } else if(2*base<len) {
+            len = (int)base;
+        } else {
+            // fill remaining part up to next block end
+            len -= base%len;
+        }
+
+        return len;
     }
 
     public PrimeFile growTo(long limit) {
@@ -150,15 +174,19 @@ public class PrimeFile implements Sequence, AutoCloseable {
         }
 
         BufferedSequence block = new BufferedSequence(base, (int)len);
-        dups += new Sieve(this).sieve(block).dups();
+        new Sieve(this).sieve(block);
 
-        // restore initial sequence
-        if(base==0)
-            block.buffer.put(0, (byte) Sequences.root().from(7).mask());
-
-        file.write(block.getBuffer());
+        write(block);
 
         return block;
+    }
+
+    public void write(BufferedSequence buffer) {
+
+        if(buffer.base != file.length())
+            throw new IllegalArgumentException("illegal buffer offset");
+
+        file.write(buffer.getBuffer());
     }
 
     void dump(PrintWriter out) {
@@ -175,37 +203,25 @@ public class PrimeFile implements Sequence, AutoCloseable {
         dump(new File(file));
     }
 
-    public double dups() {
-        long written = file.written();
-        return written==0 ? 0 : 100.0 * dups / written;
-    }
-
     public long[] stat() {
         return buffers.stat(new long[9]);
     }
 
-    public static void log(PrimeFile primes) {
+    public boolean log(BufferedSequence buffer) {
 
-        //if((primes.size()%1000)==0) {
-        //    long[] stat = primes.stat();
-        //    System.out.format("%d %,d %,d %,.1f%% %s\n", primes.size(), primes.limit(), stat[8], primes.dups(), Arrays.toString(primes.stat()));
-        //} else
+        if ((size() % 100) == 0) {
+            double size = 8 * buffer.capacity() / 100.0;
+            System.out.format("%d %,20d %5.1f%% %5.1f%%\n", size(), limit(), buffer.count() / size, buffer.dups() / size);
+        }
 
-        System.out.format("%d %,d %,.1f%%\n", primes.size(), primes.limit(), primes.dups());
+        return size() >= 1024 * 1024 * 4;
     }
 
     public static void main(String ... args) throws IOException {
         
         try(PrimeFile primes = PrimeFile.create(new File("primes.dat"))) {
 
-            primes.grow(buffer -> {
-                if((primes.size()%100)==0)
-                    log(primes);
-                return primes.size()>=1024*1024*4;
-            });
-
-            System.out.println();
-            log(primes);
+            primes.grow(primes::log);
         }
     }
 }
