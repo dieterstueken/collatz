@@ -1,14 +1,19 @@
 package de.ditz.primes;
 
-public class Sieve {
+import java.util.concurrent.RecursiveTask;
+
+public class BufferSieve extends RecursiveTask<BufferedSequence>  {
 
    final PrimeFile primes;
+
+   final RootBuffer root;
 
    BufferedSequence target;
 
    long prime;
 
-   public Sieve(PrimeFile primes) {
+   public BufferSieve(RootBuffer root, PrimeFile primes) {
+      this.root = root;
       this.primes = primes;
    }
 
@@ -26,36 +31,34 @@ public class Sieve {
       return target==null ? 0 : target.base + target.capacity();
    }
 
-   public Sieve rebase(long base) {
+   public long rebase(long base) {
+      if(this.isDone())
+         reinitialize();
+
       return rebase(base, primes.bufferSize(base));
    }
 
-   public Sieve rebase(long base, int capacity) {
+   public long rebase(long base, int capacity) {
 
       if(target==null || target.capacity()!=capacity)
          target = new BufferedSequence(base, capacity);
       else
          target = new BufferedSequence(base, target.getBuffer());
 
-      return this;
+      return target.base + target.capacity();
    }
 
-   public Sieve sieve(BufferedSequence target) {
-      this.target = target;
-      sieve();
-      return this;
-   }
-
-   public BufferedSequence sieve() {
+   @Override
+   public BufferedSequence compute() {
       target.dups = 0;
-      primes.root.fill(target);
+      root.fill(target);
 
       // bootstrap very first sequence
       if(target.offset()==0) {
           target.buffer.put(0, (byte) Sequences.root().from(7).mask());
       }
 
-      primes.process(primes.root.prime+1, sieve);
+      primes.process(root.prime+1, sieve);
 
       return target;
    }
@@ -71,7 +74,7 @@ public class Sieve {
          return target;
 
       this.prime = prime;
-      primes.root.process(start, drop);
+      root.process(start, drop);
 
       // continue with further primes.
       return null;

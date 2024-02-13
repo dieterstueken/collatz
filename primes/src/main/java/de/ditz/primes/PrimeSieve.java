@@ -10,7 +10,11 @@ import java.util.function.Predicate;
  * Date: 12.02.24
  * Time: 16:20
  */
-public class SieveTasks {
+public class PrimeSieve {
+
+    public static int ROOT = 19;
+
+    final RootBuffer root = RootBuffer.build(ROOT);
 
     final PrimeFile primes;
 
@@ -18,15 +22,15 @@ public class SieveTasks {
 
     final int max;
 
-    final LinkedList<SieveTask> tasks = new LinkedList<>();
+    final LinkedList<BufferSieve> sieves = new LinkedList<>();
 
-    public SieveTasks(PrimeFile primes, ForkJoinPool pool) {
+    public PrimeSieve(PrimeFile primes, ForkJoinPool pool) {
         this.primes = primes;
         this.pool = pool;
         this.max = 2*pool.getParallelism();
     }
 
-    public SieveTasks(PrimeFile primes) {
+    public PrimeSieve(PrimeFile primes) {
         this(primes, new ForkJoinPool(
                 Runtime.getRuntime().availableProcessors(),
                 ForkJoinPool.defaultForkJoinWorkerThreadFactory,
@@ -34,15 +38,14 @@ public class SieveTasks {
                 true));
     }
 
-    SieveTask newTask() {
-        Sieve sieve = new Sieve(primes);
-        return new SieveTask(sieve);
+    BufferSieve newTask() {
+        return new BufferSieve(root, primes);
     }
 
-    long submit(SieveTask task, long base) {
-        base = task.rebase(base);
-        pool.submit(task);
-        tasks.add(task);
+    long submit(BufferSieve sieve, long base) {
+        base = sieve.rebase(base);
+        pool.submit(sieve);
+        sieves.add(sieve);
         return base;
     }
 
@@ -52,33 +55,33 @@ public class SieveTasks {
         double len = primes.file.length;
         len = len*len*30;
 
-        while(tasks.size()<max && base<len) {
+        while(sieves.size()<max && base<len) {
             base = submit(newTask(), base);
         }
 
         return base;
     }
 
-    long submit(long base) {
-        return submit(newTask(), base);
-    }
-
     void cancel() {
-        for(SieveTask task = tasks.peekLast();
-            task!=null && task.cancel(false);
-            task = tasks.peekLast()) {
-                tasks.pollLast();
+        for(BufferSieve sieve = sieves.peekLast();
+            sieve!=null && sieve.cancel(false);
+            sieve = sieves.peekLast()) {
+                sieves.pollLast();
         }
     }
 
-    public PrimeFile run(Predicate<BufferedSequence> until) {
+    public PrimeFile growTo(long limit) {
+        return grow(buffer -> primes.limit()>limit);
+    }
 
-        SieveTask task = newTask();
-        long base = submit(task, primes.file.length);
+    public PrimeFile grow(Predicate<BufferedSequence> until) {
+
+        BufferSieve sieve = newTask();
+        long base = submit(sieve, primes.file.length);
 
         boolean stopped = false;
-        while((task = tasks.poll()) != null) {
-            BufferedSequence sequence = task.join();
+        while((sieve = sieves.poll()) != null) {
+            BufferedSequence sequence = sieve.join();
             primes.write(sequence);
 
             if(!stopped) {
@@ -87,8 +90,8 @@ public class SieveTasks {
                     cancel();
                 } else {
                     // submit last task anyway
-                    base = submit(task, base);
-                    if(tasks.size()<max)
+                    base = submit(sieve, base);
+                    if(sieves.size()<max)
                         base = expand(base);
                 }
             }

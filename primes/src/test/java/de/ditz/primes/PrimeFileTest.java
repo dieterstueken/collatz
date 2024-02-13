@@ -20,11 +20,11 @@ class PrimeFileTest {
 
     private void testPrimes(File tmpFile, int root, int block) throws IOException {
 
-        PrimeFile.ROOT = root;
+        PrimeSieve.ROOT = root;
         PrimeFile.BLOCK = block;
 
         try(PrimeFile primes = PrimeFile.create(tmpFile)) {
-            primes.growTo(1<<22);
+            primes.sieve().growTo(1<<22);
 
             assertEquals(0, primes.count(2));
             assertEquals(1, primes.count(3));

@@ -43,7 +43,7 @@ public class Dump implements Predicate<BufferedSequence> {
         //BufferedSequence.debug = -1;
 
         try (PrimeFile primes = PrimeFile.create(new File("primes.dat"))) {
-            primes.grow(new Dump(primes, 200000));
+            primes.sieve().grow(new Dump(primes, 200000));
             primes.dump("primes.txt");
         }
     }

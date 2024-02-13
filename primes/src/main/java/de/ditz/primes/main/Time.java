@@ -58,7 +58,7 @@ public class Time implements Predicate<BufferedSequence> {
         //PrimeFile.ROOT = 23;
 
         try(PrimeFile primes = PrimeFile.create(file)) {
-            primes.grow(new Time(primes, 30));
+            primes.sieve().grow(new Time(primes, 30));
         }
     }
 }
