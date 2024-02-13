@@ -46,6 +46,19 @@ public class SieveTasks {
         return base;
     }
 
+    long expand(long base) {
+
+        // submit further tasks if the number of current primes is sufficient
+        double len = primes.file.length;
+        len = len*len*30;
+
+        while(tasks.size()<max && base<len) {
+            base = submit(newTask(), base);
+        }
+
+        return base;
+    }
+
     long submit(long base) {
         return submit(newTask(), base);
     }
@@ -70,20 +83,13 @@ public class SieveTasks {
 
             if(!stopped) {
                 stopped = until.test(sequence);
-                if(stopped)
+                if(stopped) {
                     cancel();
-            }
-
-            if(!stopped) {
-                // submit last task anyway
-                base = submit(task, base);
-
-                // submit further tasks if the number of current primes is sufficient
-                double len = primes.file.length;
-                len = len*len*30;
-
-                while(tasks.size()<max && base<len) {
-                    base = submit(newTask(), base);
+                } else {
+                    // submit last task anyway
+                    base = submit(task, base);
+                    if(tasks.size()<max)
+                        base = expand(base);
                 }
             }
         }

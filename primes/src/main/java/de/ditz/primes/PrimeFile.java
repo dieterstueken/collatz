@@ -211,7 +211,8 @@ public class PrimeFile implements Sequence, AutoCloseable {
 
         if ((size() % 100) == 0) {
             double size = 8 * buffer.capacity() / 100.0;
-            System.out.format("%d %,20d %5.1f%% %5.1f%%\n", size(), limit(), buffer.count() / size, buffer.dups() / size);
+            System.out.format("%d %,20d %5.1f%% %5.1f%% %5.1f\n",
+                    size(), limit(), buffer.count() / size, buffer.dups() / size, Math.log(limit())/Math.log(2));
         }
 
         return size() >= 1024 * 1024 * 4;
@@ -219,7 +220,7 @@ public class PrimeFile implements Sequence, AutoCloseable {
 
     public static void main(String ... args) throws IOException {
         
-        try(PrimeFile primes = PrimeFile.create(new File("primes.dat"))) {
+        try(PrimeFile primes = PrimeFile.append(new File("primes.dat"))) {
 
             primes.grow(primes::log);
         }

@@ -32,7 +32,7 @@ public class Sieve {
 
    public Sieve rebase(long base, int capacity) {
 
-      if(target==null || target.size()!=capacity)
+      if(target==null || target.capacity()!=capacity)
          target = new BufferedSequence(base, capacity);
       else
          target = new BufferedSequence(base, target.getBuffer());

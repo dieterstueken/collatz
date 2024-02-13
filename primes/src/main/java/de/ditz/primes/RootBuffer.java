@@ -56,6 +56,8 @@ public class RootBuffer extends BufferedSequence {
      */
     public BufferedSequence fill(BufferedSequence target) {
 
+        target.buffer.clear();
+
         // start at this.buffer's position
         int pos = (int)(target.base % this.capacity());
 
