@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.List;
 import java.util.function.Predicate;
 
 /**
@@ -82,6 +83,10 @@ public class PrimeFile implements Sequence, AutoCloseable {
             return buffers.count(limit) + 3;
 
         return Sequences.PRIMES.count(limit);
+    }
+
+    public List<BufferedSequence> buffers() {
+        return buffers.buffers;
     }
 
     @Override

@@ -33,6 +33,10 @@ public class BufferedSequence implements Sequence, LimitedTarget<BufferedSequenc
         }
     };
 
+    public List<ByteSequence> sequences() {
+        return sequences;
+    }
+
     public BufferedSequence(long base, ByteBuffer buffer) {
         this.buffer = buffer;
         this.base = base;
@@ -208,6 +212,7 @@ public class BufferedSequence implements Sequence, LimitedTarget<BufferedSequenc
     public long[] stat(long[] stat) {
         int cap = buffer.capacity();
         int l = stat.length;
+        int last = 0;
 
         for(int i=0; i<cap; ++i) {
             int seq = 0xff & buffer.get((int) i);
@@ -219,6 +224,23 @@ public class BufferedSequence implements Sequence, LimitedTarget<BufferedSequenc
 
             if(l>8)
                 stat[8] += n;
+
+            if(l>9) {
+                int k=0;
+                last <<= 8;
+                last |= seq;
+                if((last&0x101) == 0x101)
+                    ++k;
+
+                if((last&12) == 12)
+                    ++k;
+
+                if((last&0x30) == 0x30)
+                    ++k;
+
+                if(k!=0)
+                    stat[9] += k;
+            }
         }
 
         return stat;
