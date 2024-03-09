@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.List;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 /**
  * version:     $
@@ -83,6 +84,10 @@ public class PrimeFile implements Sequence, AutoCloseable {
             return buffers.count(limit) + 3;
 
         return Sequences.PRIMES.count(limit);
+    }
+
+    public Stream<ByteSequence> sequences() {
+         return buffers.buffers.stream().map(BufferedSequence::sequences).flatMap(List::stream);
     }
 
     public List<BufferedSequence> buffers() {

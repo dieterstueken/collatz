@@ -1,5 +1,6 @@
 package de.ditz.primes.main;
 
+import de.ditz.primes.ByteSequence;
 import de.ditz.primes.PrimeFile;
 
 import java.io.File;
@@ -13,36 +14,50 @@ import java.io.IOException;
  */
 public class Count {
 
-    long[] prime = {1, 7, 11, 13, 17, 19, 23, 29, 31};
+    final PrimeFile primes;
 
     int j=1;
-    long limit = 30;
-    long count = 0;
+    long limit = 8;
 
-    public Long count(long prime) {
+    long pos;
+    long count = 3;
 
-        if(prime>limit) {
-            System.out.format("%,23d %2d %,20d %5.1f\n",
-                    limit, this.prime[j-1], count, (double)limit*8/count/30);
+    public Count(PrimeFile primes) {
+        this.primes = primes;
+    }
 
-            if(j>=this.prime.length)
-                return count;
-
-            limit *= this.prime[j++];
+    void count(ByteSequence seq) {
+        pos += ByteSequence.SIZE;
+        count += seq.size();
+        if(count>limit) {
+            stat();
+            limit *= 2;
         }
+    }
 
-        ++count;
-        return null;
+    void stat() {
+        long prime = primes.process(pos, p->p);
+        double pn =  count * Math.log(count);
+        System.out.format("%,23d %,23d %,23.1f %5.1f\n", count, prime, pn, 100*(prime/pn-1));
+    }
+
+    public void run() {
+        pos = 0;
+        count = 3;
+        limit = 8;
+
+        primes.sequences().forEach(this::count);
+
+        stat();
     }
 
     public static void main(String ... args) throws IOException {
         File file = new File(args.length > 0 ? args[0] : "primes.dat");
-
-
+        PrimeFile.BLOCK = 1<<24;
         try(PrimeFile primes = PrimeFile.open(file)) {
             System.out.format("total: %,16d\n", primes.size());
-            Count count = new Count();
-            primes.process(5, count::count);
+            Count count = new Count(primes);
+            count.run();
         }
     }
 }

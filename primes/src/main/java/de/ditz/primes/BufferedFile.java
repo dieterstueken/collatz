@@ -6,7 +6,10 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.*;
+import java.util.AbstractList;
+import java.util.EnumSet;
+import java.util.RandomAccess;
+import java.util.Set;
 
 /**
  * Created by IntelliJ IDEA.
@@ -66,7 +69,8 @@ public class BufferedFile extends AbstractList<ByteBuffer> implements RandomAcce
             bytes.position(bytes.limit());
             return bytes;
         } catch (IOException e) {
-            throw new UncheckedIOException(e);
+            String error = "unable to allocate buffer# %d %,dMb".formatted(index, index*blockSize()/(1L<<20));
+            throw new UncheckedIOException(error, e);
         }
     }
 
