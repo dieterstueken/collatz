@@ -1,1 +1,0 @@
-some insights to the collatz conjecture
