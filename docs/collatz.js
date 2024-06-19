@@ -46,17 +46,17 @@ function Tree() {
 
         this.pred = function(i) {
 
-            var mod = this.index%3;
+            const mod = this.index%3;
 
-            if(mod==1)
+            if(mod===1)
                 return undefined;
 
             if(i>0)
                 return this.pred(i-1).sibl();
 
-            var pred = this._pred;
+            let pred = this._pred;
             if(!pred) {
-                var step = mod ? 0 : 1;
+                const step = mod ? 0 : 1;
                 pred = new Node(this, step);
                 this._pred = pred;
             }
@@ -65,7 +65,7 @@ function Tree() {
         }
 
         this.sibl = function() {
-            var sibl = this._sibl;
+            let sibl = this._sibl;
             if(!sibl) {
                 sibl = new Node(this.succ, this.step+2);
                 this._sibl = sibl;
@@ -74,10 +74,10 @@ function Tree() {
         }
 
         this.fac = function() {
-            var fac = this._fac;
+            let fac = this._fac;
             if(!fac) {
                 fac = 1;
-                for(i=1; i<this.index; i++) {
+                for(let i=1; i<this.index; i++) {
                     if(this.contains(i))
                         ++fac;
                 }
@@ -90,11 +90,11 @@ function Tree() {
             i = 2*i+1;
             do {
 
-                if(i==this.n)
+                if(i===this.n)
                     return true;
 
                 i = (3*i+1)/2;
-                while((i%2)==0)
+                while((i%2)===0)
                     i = i/2;
 
             } while(i>1)
@@ -104,16 +104,16 @@ function Tree() {
 
         this.succeeds = function(node) {
             
-            if(node==undefined)
+            if(node===undefined)
                 return false;
 
-            if(node==this)
+            if(node===this)
                 return true;
 
-            if(node==this.index)
+            if(node===this.index)
                 return true;
 
-            if(this.succ==this)
+            if(this.succ===this)
                 return false;
 
             return this.succ.succeeds(node);
@@ -128,11 +128,11 @@ function Tree() {
 
     this.node = function(index) {
 
-        if(index==0)
+        if(index===0)
             return this.root;
 
-        var k = 3*index + 2;
-        var step = 0;
+        let k = 3 * index + 2;
+        let step = 0;
         while(k>1 && !(k%2)) {
             ++step;
             k>>=1;
@@ -148,10 +148,10 @@ function Tree() {
 
     this.inode = function(index) {
 
-        if(index == undefined)
+        if(index === undefined)
             return null;
 
-        if(index%2!=1)  // even
+        if(index%2!==1)  // even
             return null;
             
         return this.node((index-1)/2);

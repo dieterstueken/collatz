@@ -38,14 +38,14 @@
                 cell=row.insertCell()
                 cell.appendChild(span);
                 span.textContent=node.n;
-                span.title=node.n.toString(2);
-                if((node.n%3)==0)
+                span.title=node.n.toString(2) + ":" + node.n.toString(3);
+                if((node.n%3)===0)
                         cell.className="bl";
 
                 cell=row.insertCell()
                 span =  document.createElement("span");
                 span.textContent=node.index;
-                span.title=node.index.toString(3);
+                span.title=node.index.toString(2) + ":" + node.index.toString(3);
                 cell.appendChild(span);
 
                 cell=row.insertCell()
@@ -63,26 +63,36 @@
                 cell=row.insertCell()
                 cell.style.textAlign="left";
 
-                let max = node.max.n;
+                const max = node.max.n;
                 appendPath = function(node) {
 
                     // append successors first
-                    let succ = node.succ;
-                    if(succ!=node && succ.index>0)
+                    const succ = node.succ;
+                    if(succ!==node && succ.index>0)
                         appendPath(succ);
 
                     // append current successor
-                    let span =  document.createElement("span");
+                    const span =  document.createElement("span");
                     span.textContent=" " + node.step;
                     //span.title=succ.n + "<-" + node.n;
-                    span.title=node.index + "[" + node.index.toString(3) + ":" + node.index.toString(2) + "]";
-                    if(node.n == max)
+                    span.title=node.index + "[" + node.index.toString(2) + ":" + node.index.toString(3) + "]";
+                    if(node.n === max)
                         span.className = "rd";
 
                     cell.appendChild(span);
                 }
 
                 appendPath(node);
+
+                span =  document.createElement("span");
+                span.textContent = [" ↘",""," ↗"][node.index%3];
+                const pred = node.pred(0);
+
+                if(pred !== undefined) {
+                 span.title=pred.index;
+                }
+
+                cell.appendChild(span);
             }
         }
     }
@@ -103,7 +113,7 @@
                     if(node.len>-value)
                         return false;
                 } else {
-                    if(node.len!=value)
+                    if(node.len!==value)
                         return false;
                 }
             }
