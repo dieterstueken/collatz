@@ -1,16 +1,12 @@
 package de.ditz.draw;
 
-import javax.swing.BorderFactory;
-import javax.swing.JPanel;
+import javax.swing.*;
 import javax.swing.border.Border;
-import java.awt.Color;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
+import java.awt.*;
 import java.awt.event.InputEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
-import java.util.function.DoubleUnaryOperator;
 
 /**
  * Created by IntelliJ IDEA.
@@ -19,8 +15,6 @@ import java.util.function.DoubleUnaryOperator;
  * Time: 18:18
  */
 public class Diagram extends JPanel {
-
-      final DoubleUnaryOperator function;
 
       Scale sx = new Scale(this::getWidth, "Sx") {
             void drawLine(Graphics gr, int iy, int ix0, int ix1) {
@@ -47,8 +41,7 @@ public class Diagram extends JPanel {
             }
       };
 
-      public Diagram(DoubleUnaryOperator function) {
-            this.function = function;
+      public Diagram() {
 
             Border border = BorderFactory.createLineBorder(Color.BLACK);
             setBorder(border);
@@ -59,28 +52,12 @@ public class Diagram extends JPanel {
             addMouseWheelListener(adapter);
       }
 
-      int fy(int ix) {
-            double x = sx.val(ix);
-            double y = function.applyAsDouble(x);
-            return sy.pix(y);
-      }
-
       @Override
       public void paintComponent(Graphics g) {
             super.paintComponent(g);
 
-            Graphics2D gr = (Graphics2D) g;
-
             sx.drawTicks(g, sy);
             sy.drawTicks(g, sx);
-
-            int width = this.getWidth();
-            int iy = fy(0);
-            for(int ix=0; ix<width; ++ix) {
-                  int ny = fy(ix+1);
-                  gr.drawLine(ix, iy, ix+1, ny);
-                  iy = ny;
-            }
       }
 
       MouseAdapter mouseAdapter() {

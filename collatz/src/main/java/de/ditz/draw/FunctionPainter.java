@@ -1,13 +1,7 @@
 package de.ditz.draw;
 
-import javax.swing.BorderFactory;
-import javax.swing.BoxLayout;
-import javax.swing.DefaultBoundedRangeModel;
-import javax.swing.JFrame;
-import javax.swing.JPanel;
-import javax.swing.JSlider;
-import javax.swing.SwingUtilities;
-import java.awt.Dimension;
+import javax.swing.*;
+import java.awt.*;
 
 /**
  * Created by IntelliJ IDEA.
@@ -15,16 +9,16 @@ import java.awt.Dimension;
  * Date: 04.07.21
  * Time: 18:39
  */
-public class Painter extends JPanel {
+public class FunctionPainter extends JPanel {
 
     DefaultBoundedRangeModel maxModel = new DefaultBoundedRangeModel(5, 0, 0, 500);
 
-    Painter() {
+    FunctionPainter() {
         setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
         setPreferredSize(new Dimension(300, 150));
         setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
 
-        Diagram digram = new Diagram(this::f);
+        Diagram digram = new FunctionDiagram(this::f);
         add(digram);
 
         maxModel.addChangeListener(e -> digram.repaint());
@@ -69,7 +63,7 @@ public class Painter extends JPanel {
 
     public static void main(String ... args) {
 
-        final Painter painter = new Painter();
+        final FunctionPainter painter = new FunctionPainter();
         
         SwingUtilities.invokeLater(painter::open);
     }
