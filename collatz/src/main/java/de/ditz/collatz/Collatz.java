@@ -2,6 +2,7 @@ package de.ditz.collatz;
 
 import java.math.BigInteger;
 import java.util.AbstractList;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -10,18 +11,35 @@ import java.util.List;
  * Date: 10.04.20
  * Time: 17:43
  */
-public class Collatz {
+
+/**
+ * Class Collatz represents an odd entry with n = 2k + 1.
+ * Each entry has a known successor towards k=0 (n=1) which is some steps away.
+ * Each entry may have a predecessor.
+ *
+ * Entries with k%3==1 have no predecessor.
+ * Entries with k%3==0 have even predecessors (0, 2, 4, ...)
+ * Entries with k%3==2 have odd predecessors (1, 3, 5, ...)
+ *
+ *  * Each entry has a sibling which is steps+1 from its successor away.
+ */
+abstract class Collatz {
+
+    static final Comparator<Collatz> CMP = Comparator.comparing(Collatz::j).thenComparingInt(Collatz::m);
+
+    public static Collatz max(Collatz a, Collatz b) {
+        return CMP.compare(a, b) > 0 ? a : b;
+    }
 
     static final BigInteger THREE = BigInteger.valueOf(3L);
 
-    public static final Collatz ROOT = new Collatz();
-
-    // k = 3*index + m;
+    // k = 3*j + m;
     // n = 2*k + 1;
     final BigInteger j;
-    final int m;
+    //final int m;
 
-    final BigInteger k;
+    // index of this collatz
+    //final BigInteger k;
 
     final int step;
 
@@ -33,24 +51,13 @@ public class Collatz {
 
     final List<Collatz> seq;
 
-    private Collatz() {
-        this.j = BigInteger.ZERO;
-        this.m = 0;
-        this.k = BigInteger.ZERO;
-        this.step = 1;
-        this.succ = this;
-        this.pred = this;
-        this.len = 0;
-        this.seq = List.of();
-    }
-
-    private Collatz(Collatz succ, int step, BigInteger j, int m) {
+    protected Collatz(Collatz succ, int step, BigInteger j) {
         this.succ = succ;
+        this.len = succ.len+1;
         this.step = step;
         this.j = j;
-        this.m = m;
-        this.k = j.multiply(THREE).add(BigInteger.valueOf(m));
-        this.len = succ.len+1;
+        //this.m = m;
+        //this.k = j.multiply(THREE).add(BigInteger.valueOf(m));
 
         this.seq = new AbstractList<>() {
 
@@ -71,6 +78,30 @@ public class Collatz {
         };
     }
 
+    protected Collatz() {
+        this.j = BigInteger.ZERO;
+        this.step = 1;
+        this.succ = this;
+        this.pred = this;
+        this.len = 0;
+        this.seq = List.of(this);
+    }
+
+    @Override
+    public String toString() {
+        return String.format("3*%d+%d=%d[%d]", j, m(), k(), step);
+    }
+
+    abstract public int m();
+
+    public BigInteger j() {
+        return j;
+    }
+
+    public BigInteger k() {
+        return j.multiply(THREE).add(BigInteger.valueOf(m()));
+    }
+
     public Collatz succ() {
         return succ;
     }
@@ -83,108 +114,23 @@ public class Collatz {
             return pred();
         
         Collatz pi = pred(i-1);
-        if(pi==null)
-            pi = pred(i-1);
         return pi.sibl();
     }
 
     public Collatz pred() {
-
-        if(m==1)
-            return null;
-
-        Collatz pred = this.pred;
-        if(pred!=null)
-            return pred;
-
-        synchronized (this) {
-            pred = this.pred;
-            if(pred!=null)
-                return pred;
-
-            boolean even = m!=0;
-
-            BigInteger k = even
-                    ? j.shiftLeft(1).setBit(0) // 2j+1
-                    : j.shiftLeft(2);          // 4j
-
-            BigInteger[] m = k.divideAndRemainder(THREE);
-
-            this.pred = pred = new Collatz(this, even ? 0 : 1, m[0], m[1].intValueExact());
-            return pred;
-        }
+        return null;
     }
 
     transient Collatz sibl;
 
     public Collatz sibl() {
         Collatz sibl = this.sibl;
-        if(sibl!=null)
+
+        if (sibl != null)
             return sibl;
-
-        synchronized(this) {
-            sibl = this.sibl;
-            if(sibl!=null)
-                return sibl;
-
-            // 3kl = 2^l(2k+1)-2
-            // 3kl+2 = 4 2^l(2k+1)-2
-            //       = 4(2^l(2k+1)-2)+8-2
-            //       = 4 3kl + 6
-            // k' = 4k+2 = 4(3j+m)+2
-            // 3j' + m' =  12j + 4m + 2
-            //          =  3(4j + m) + m + 2
-            // j' = 4j + (4m+2)/3
-            // m' = (4m+2)%3
-            //
-            // m m' j'
-            // 0 2 4j
-            // 1 0 4j + 2
-            // 2 1 4j + 3
-
-            int mm = (4 * m + 2) % 3;
-            BigInteger jj = j.shiftLeft(2);
-
-            if (m > 0)
-                jj = jj.setBit(1);
-
-            if (m > 1)
-                jj = jj.setBit(0);
-
-            this.sibl = sibl = new Collatz(succ, step + 2, jj, mm);
-        }
-        return sibl;
+        else
+            return _sibl();
     }
 
-    @Override
-    public String toString() {
-        return String.format("3*%d+%d=%d[%d]", j, m, k, step);
-    }
-
-    public static Collatz get(BigInteger k) {
-        if(k.signum()==0)
-            return ROOT;
-
-        if(k.signum()<0)
-            throw new IllegalArgumentException();
-
-        BigInteger k3 = k.add(k.add(BigInteger.ONE).shiftLeft(1));
-        int L = k3.getLowestSetBit();
-        BigInteger ks = k3.shiftRight(L+1);
-        
-        Collatz succ = get(ks);
-        Collatz result = succ.pred(L / 2);
-        return result;
-    }
-
-    public static Collatz get(long k) {
-        return get(BigInteger.valueOf(k));
-    }
-
-
-    public static void main(String ... args) {
-        Collatz c = Collatz.get(13);
-        c.seq.forEach(System.out::println);
-    }
-
+    abstract protected Collatz _sibl();
 }
