@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="de">
+ <head>
+  <meta charset="utf-8"/>
+  <title>on the collatz problem</title>
+
+  <script src="raphael-min.js"></script>
+  <script src="collatz.js"></script>
+  <script type="text/javascript">
+
+    window.onload = function () {
+
+        var max = document.getElementById("max");
+        var run = document.getElementById("run");
+        var len = document.getElementById("len");
+        var hit = document.getElementById("hit");
+
+        var SX = window.innerWidth - 50;
+        var SY = 5*window.innerHeight - 50;
+
+        var hist = Raphael("hist", SX, SY);
+        var tree = new Tree();
+
+        var colors = new Array(
+            {stroke: "#0f0"},
+            {stroke: "#f00"},
+            {stroke: "#888"});
+
+        var nc = 2;
+
+        function draw() {
+            hist.clear();
+
+            var sx = SX / Math.log(max.value);
+            var sy = SY / len.value;
+
+            for(var i=0; i<len.value; i+=10)
+            {
+                var y = sy*i;
+                hist.path([["M", 0, y], ["L", SX, y]])
+                    .attr({stroke: "grey"});
+            }
+
+            for(var i=1; i<=max.value; i*=4) {
+                var x = sx*Math.log(i);
+                hist.path([["M", x, 0], ["L", x, SY]])
+                    .attr({stroke: "grey"});
+            }
+
+            hist.rect(0, 0, SX, SY, 1);
+
+            function fx(node) {
+                return Math.log(node.n);
+            }
+
+
+            function plot(node) {
+
+                var x = sx*fx(node);
+                var y = sy*node.len;
+
+                //var r = hist.rect(x, y, 1, 1);
+                //r.attr(colors[node.n%3]);
+
+                var succ = node.succ;
+                if(succ!=node) {
+                    if(node.step<nc) {
+                        var xs = sx*fx(succ);
+                        var ys = sy*succ.len;
+                        var color = colors[Math.min(node.step, nc)];
+                        var r = hist.path([['M', x, y], ['L', xs, ys]]).attr(color);
+                        r.node.onmouseover = function() {
+                            hit.firstChild.data = node.toString();
+                        }
+                    }
+                }
+
+                var r = hist.rect(x, y, 1, 1);
+                r.node.onmouseover = function() {
+                    hit.firstChild.data = node.toString();
+                }
+            }
+
+            for(var i=0; i<max.value; ++i) {
+                var s = tree.node(i);
+                plot(s);
+            }
+        }
+
+        run.onclick = function() {
+            draw();
+        }
+
+        // draw empty grid
+
+        draw();
+    }
+
+  </script>
+
+ </head>
+
+ <body>
+        max:<input id="max" type="text" value="10000"/>
+        len:<input id="len" type="text" value="120"/>
+        <input id="run" type="button" value="run"/>
+        <br/><div id="hit"/>
+        <div style="overflow:auto height:1000px" id="hist"/>
+ </body>
+
+</html>
