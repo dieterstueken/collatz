@@ -11,6 +11,10 @@
 
     function StepTable(table) {
 
+        function n23(n) {
+           return n.toString(2) + ":" + n.toString(3);
+        }
+
         this.show = function(len, accept) {
             while(table.rows.length)
                 table.deleteRow(-1);
@@ -38,7 +42,7 @@
                 cell=row.insertCell()
                 cell.appendChild(span);
                 span.textContent=node.n;
-                span.title=node.n.toString(2) + ":" + node.n.toString(3);
+                span.title=n23(node.n);
                 if((node.n%3)===0)
                         cell.className="bl";
 
@@ -46,7 +50,7 @@
                 span =  document.createElement("span");
                 const ni = node.index;
                 span.textContent=ni;
-                span.title=ni.toString(2) + ":" + ni.toString(3);
+                span.title=n23(ni);
                 cell.appendChild(span);
 
                 cell=row.insertCell()
@@ -77,7 +81,7 @@
                     span.textContent=" " + node.step;
                     //span.title=succ.n + "<-" + node.n;
                     const nn = node.n;
-                    span.title = nn + "[" + nn.toString(2) + ":" + nn.toString(3) + "]";
+                    span.title = nn + "[" + n23(nn) + "]";
                     if(node.n === max)
                         span.className = "rd";
 
