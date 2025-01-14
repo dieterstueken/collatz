@@ -21,6 +21,7 @@
         const hist = Raphael("hist", SX, SY);
         const tree = new Tree();
 
+        const blue = {stroke: "#00f"};
         const colors = new Array(
             {stroke: "#0f0"},
             {stroke: "#f00"},
@@ -64,11 +65,22 @@
 
                 const succ = node.succ;
                 if(succ!=node) {
-                    if(node.step<nc) {
+                    var m3077 = node.max.n<=3077 && (node.contains(1538) || tree.node(1538).contains(node.index));
+                    if(node.n==31) {
+                        m3077 = node.contains(1538);
+                    }
+                    if(node.step<nc || m3077) {
                         const xs = sx*fx(succ);
                         const ys = sy*succ.len;
-                        const color = colors[Math.min(node.step, nc)];
-                        const r = hist.path([['M', x, y], ['L', xs, ys]]).attr(color);
+                        const r = hist.path([['M', x, y], ['L', xs, ys]]);
+
+                        if(m3077) {
+                            r.attr(blue);
+                            r.attr("stroke-width", 3);
+                        } else {
+                            r.attr(colors[Math.min(node.step, nc)]);
+                        }
+
                         r.node.onmouseover = function() {
                             hit.firstChild.data = node.toString();
                         }

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="de">
+ <head>
+  <meta charset="utf-8"/>
+  <title>on the collatz problem</title>
+
+  <script src="raphael-min.js"></script>
+  <script src="collatz.js"></script>
+  <script type="text/javascript">
+
+    window.onload = function () {
+
+        var max = document.getElementById("max");
+        var turn = document.getElementById("turn");
+        var dist = document.getElementById("dist");
+
+        const SX = window.innerWidth - 50;
+        const SY = SX;
+
+        var hist = Raphael("hist", SX, SY);
+
+        const origin = ["M", SX/2, SY/2];
+
+        function draw() {
+            hist.clear();
+
+            var path = [origin];
+
+            for(var i=0; i<=36*turn.value; i += 1)
+            {
+               const rad = i * dist.value/36;
+               const phi = i * 2*Math.PI/36;
+
+               const x = rad*Math.sin(phi);
+               const y = rad*Math.cos(phi);
+
+               path.push(["L", SX/2 + x, SY/2 - y]);
+            }
+
+            hist.path(path).attr({stroke: "black"});
+
+            const lnf = Math.log(fact.value);
+            const max = Math.min(Math.exp(lnf * turn.value), 100000);
+
+            for(var i=1; i<max; ++i) {
+                const n = Math.log(i)/lnf;
+                const rad = n * dist.value;
+                const phi = n * 2*Math.PI;
+
+                const x = rad*Math.sin(phi);
+                const y = rad*Math.cos(phi);
+
+                const title = (i-1) + ":" + (2*i-1);
+                hist.circle(SX/2 + x,  SY/2 - y, dist.value/4)
+                .attr({fill: "red", stroke: "red", title: title});
+            }
+        }
+
+        run.onclick = function() {
+            draw();
+        }
+
+        draw();
+    }
+
+  </script>
+
+ </head>
+
+ <body>
+        fact:<input id="fact" type="text" value="1.5"/>
+        turn:<input id="turn" type="text" value="10"/>
+        dist:<input id="dist" type="text" value="10"/>
+        <input id="run" type="button" value="run"/>
+        <div style="overflow:auto height:1000px" id="hist"/>
+ </body>
+
+</html>

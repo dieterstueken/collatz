@@ -44,8 +44,9 @@
 
                 cell=row.insertCell()
                 span =  document.createElement("span");
-                span.textContent=node.index;
-                span.title=node.index.toString(2) + ":" + node.index.toString(3);
+                const ni = node.index;
+                span.textContent=ni;
+                span.title=ni.toString(2) + ":" + ni.toString(3);
                 cell.appendChild(span);
 
                 cell=row.insertCell()
@@ -75,7 +76,8 @@
                     const span =  document.createElement("span");
                     span.textContent=" " + node.step;
                     //span.title=succ.n + "<-" + node.n;
-                    span.title=node.index + "[" + node.index.toString(2) + ":" + node.index.toString(3) + "]";
+                    const nn = node.n;
+                    span.title = nn + "[" + nn.toString(2) + ":" + nn.toString(3) + "]";
                     if(node.n === max)
                         span.className = "rd";
 
