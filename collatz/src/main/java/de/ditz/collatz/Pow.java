@@ -7,32 +7,22 @@ public class Pow {
     static final BigInteger I3 = BigInteger.valueOf(3);
 
     public static void main(String[] args) {
-
-        for(int i=0; i<30; ++i) {
-            System.out.format("%3d", i);
-            long l = 1L<<i;
-            for(int k=1; k<16; ++k) {
-                int k3 = k3(k*l);
-                if(k3==0)
-                    System.out.print("  .");
-                else
-                    System.out.format("%3d", k3);
+        BigInteger p3 = BigInteger.valueOf(1);
+        for(int i=1; i<33; ++i) {
+            BigInteger p3k = p3.subtract(BigInteger.valueOf(1));
+            System.out.format("%2d ", i);
+            for(int k=1; k<72; ++k) {
+                int l = p3k.getLowestSetBit();
+                if(k%2==1) {
+                    if (l > 1)
+                        System.out.format("%2X", l);
+                    else
+                        System.out.print("  ");
+                }
+                p3k = p3k.add(p3);
             }
             System.out.println();
+            p3 = p3.multiply(I3);
         }
-    }
-
-    static int k3(long n) {
-        int k3 = 0;
-        while(n>0) {
-            long m3 = n % 3;
-            if(m3==2)
-                ++k3;
-            else
-                break;
-            n /= 3;
-        }
-
-        return k3;
     }
 }
