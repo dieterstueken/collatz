@@ -1,40 +1,69 @@
 package de.ditz.collatz;
 
 import java.math.BigInteger;
+import java.util.List;
+import java.util.stream.IntStream;
 
 public class Pow {
 
-    static final BigInteger I1 = BigInteger.valueOf(1);
-    static final BigInteger I3 = BigInteger.valueOf(3);
-
     public static void main(String[] args) {
-
         Integer hit = args.length>0 ? Integer.parseInt(args[0]) : null;
+        new Pow(hit, 72).run(33);
+    }
 
-        System.out.print("    ");
-        for(int k=10; k<72; k += 10) {
-            System.out.format("%10d", k);
+    final List<BigInteger> BI;
+
+    final BigInteger I1 = BigInteger.valueOf(1);
+    final BigInteger I3 = BigInteger.valueOf(3);
+
+    BigInteger p3 = BigInteger.valueOf(1);
+
+    final Integer hit;
+    final int width;
+
+    public Pow(Integer hit, int width) {
+        this.hit = hit;
+        this.width = width;
+
+        BI = IntStream.range(0, width).mapToObj(BigInteger::valueOf).toList();
+
+        head();
+    }
+
+    BigInteger bi(int i) {
+        return BI.get(i);
+    }
+
+    void head() {
+
+        System.out.print("   ");
+        for(int k=9; k<width; k += 10) {
+            System.out.format("%5d", k);
         }
         System.out.println();
-        
-        BigInteger p3 = BigInteger.valueOf(1);
-        for(int i=1; i<33; ++i) {
-            BigInteger p3k = p3.subtract(I1);
-            System.out.format("%2d ", i);
-            for(int k=1; k<72; ++k) {
-                int l = p3k.getLowestSetBit();
-                if(k%2==1) {
-                    if(hit!=null && l!=hit)
-                        System.out.print("  ");
-                    else if (l > 1)
-                        System.out.format("%2X", l);
-                    else
-                        System.out.print("  ");
-                }
-                p3k = p3k.add(p3);
-            }
-            System.out.println();
+
+    }
+
+    void run(int lines) {
+        for(int i=0; i<lines; ++i) {
+            line(i);
             p3 = p3.multiply(I3);
         }
+    }
+
+    void line(int i) {
+        System.out.format("%2d ", i);
+
+        for(int k=1; k<width; k+=2) {
+            BigInteger p3k = p3.multiply(bi(k)).subtract(I1);
+            
+            int l = p3k.getLowestSetBit();
+            if(l<1 || hit!=null && hit!=l)
+                System.out.print((k%10)==9?"|":" ");
+            else
+                System.out.format("%1x", l);
+        }
+
+        System.out.println();
     }
 }
