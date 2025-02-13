@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="de">
+ <head>
+  <meta charset="utf-8"/>
+  <title>on the collaz problem</title>
+
+  <script src="collatz.js"></script>
+  <script type="text/javascript">
+
+    const tree = new Tree();
+
+    appendPath = function(cell, node, max) {
+
+       // steps to root with successor > 0
+
+       let k = 1;
+       let root = node;
+       while(root.step==0) {
+         root = root.succ
+         ++k
+       }
+
+       // append successors first
+       const succ = root.succ;
+       if(succ!==root && succ.index>0)
+            appendPath(cell, succ, max);
+
+       // append root node
+       var span =  document.createElement("span");
+       span.textContent=" " + root.step;
+       const nk = 3*(root.n+1)/2;
+       span.title = nk + "[" + n23(nk) + "]";
+       if(root.n === max)
+           span.className = "rd";
+       cell.appendChild(span);
+
+       // append current node
+       span = document.createElement("span");
+       span.textContent="." + k;
+
+       const nn = node.n;
+       span.title = nn + "[" + n23(nn) + "]";
+       span.className="gr";
+       cell.appendChild(span);
+    }
+
+    function n23(n) {
+       return n.toString(2) + ":" + n.toString(3);
+    }
+
+    function StepTable(table) {
+
+        this.show = function(len, accept) {
+            while(table.rows.length)
+                table.deleteRow(-1);
+
+            len = Number(len);
+
+            for(var n=0; n<len; ++n) {
+
+                const node = tree.node(n);
+    
+                if(!accept(node))
+                    continue;
+
+                const row = table.insertRow();
+                row.align="right";
+
+                let cell=row.insertCell()
+                cell.className= node.succ.n>node.n?"rd":"gr";
+                let span =  document.createElement("span");
+                cell.appendChild(span);
+                span.textContent=node.succ.n;
+                span.title=node.succ.n.toString(2);
+
+                span =  document.createElement("span");
+                cell=row.insertCell()
+                cell.appendChild(span);
+                span.textContent=node.n;
+                span.title=n23(node.n);
+                if((node.n%3)===0)
+                        cell.className="bl";
+
+                cell=row.insertCell()
+                span =  document.createElement("span");
+                const ni = node.index;
+                span.textContent=ni;
+                span.title=n23(ni);
+                cell.appendChild(span);
+
+                cell=row.insertCell()
+                cell.textContent=node.len;
+
+                cell=row.insertCell()
+                cell.textContent=2*node.sum - node.len;
+
+                cell=row.insertCell()
+                cell.textContent=node.fac();
+
+                cell=row.insertCell()
+                cell.textContent=node.max.index;
+
+                cell=row.insertCell()
+                cell.style.textAlign="left";
+
+                appendPath(cell, node, node.max.n);
+
+                span =  document.createElement("span");
+                span.textContent = [" ↘",""," ↗"][node.index%3];
+                const pred = node.pred(0);
+
+                if(pred !== undefined) {
+                 span.title=pred.index;
+                }
+
+                cell.appendChild(span);
+            }
+        }
+    }
+
+    window.onload = function () {
+        const table = document.getElementById("steps");
+        const steps = new StepTable(table);
+        const rows = document.getElementById("rows");
+
+        const len = document.getElementById("len");
+        const cont = document.getElementById("cont");
+
+        function accept(node) {
+
+            if(len.value) {
+                const value = Number(len.value);
+                if(value<0) {
+                    if(node.len>-value)
+                        return false;
+                } else {
+                    if(node.len!==value)
+                        return false;
+                }
+            }
+
+            if(cont.value) {
+                const value = Number(cont.value);
+                if(!node.succeeds(value))
+                    return false;
+            }
+
+            return true;
+        }
+
+        function show() {
+            steps.show(rows.value, accept);
+        }
+
+        document.getElementById("show").onclick = show;
+
+        show();
+    };
+
+
+  </script>
+
+  <style type="text/css">
+    td {text-align: right; padding-left: 0.2em;}
+    .bl {color: blue; text-shadow:black 2px 2px 2px;}
+    .gr {color: green;}
+    .rd {color: red;}
+  </style>
+
+ </head>
+ <body>
+  <input id="show" type="button" value="show"/>
+  max:<input size="10" id="rows" type="text" value="500"/>
+  len:<input size="4" id="len" type="text" value=""/>
+  contains:<input size="4" id="cont" type="text" value=""/>
+  <br/>
+  <table border='1' rules='groups'>
+   <colgroup span="3" align="right"></colgroup>
+   <colgroup span="3" align="right"></colgroup>
+   <colgroup align="right"></colgroup>
+   <thead>
+   <tr>
+     <th align="right">succ</th> 
+     <th align="right">n</th>
+     <th align="right">k</th>
+    <th align="right">l</th>
+    <th align="right">s</th>
+    <th align="right">p</th>
+     <th align="right">max</th>
+     <th colspan='0'>path</th>
+    </tr>
+   </thead>
+   <tbody id="steps">
+   </tbody>
+  </table>
+ </body>
+</html>
