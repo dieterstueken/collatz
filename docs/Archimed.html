@@ -8,6 +8,8 @@
   <script src="collatz.js"></script>
   <script type="text/javascript">
 
+    const colors = new Array("#f00", "#00f", "#0f0", "#007", "#070",  "#700");
+
     window.onload = function () {
 
         var max = document.getElementById("max");
@@ -42,17 +44,18 @@
             const lnf = Math.log(fact.value);
             const max = Math.min(Math.exp(lnf * turn.value), 100000);
 
-            for(var i=1; i<max; ++i) {
-                const n = Math.log(i)/lnf;
+            for(var i=1; i<2*max; ++i) {
+                const n = Math.log((i+1)*0.5)/lnf;
                 const rad = n * dist.value;
                 const phi = n * 2*Math.PI;
 
                 const x = rad*Math.sin(phi);
                 const y = rad*Math.cos(phi);
 
-                const title = (i-1) + ":" + (2*i-1);
-                hist.circle(SX/2 + x,  SY/2 - y, dist.value/4)
-                .attr({fill: "red", stroke: "red", title: title});
+                const title = i;
+                const clr = i%2!=0 ? "blue" : (((2*i)%3==1) ? "red" : "gray")
+                hist.circle(SX/2 + x,  SY/2 - y, dist.value/3)
+                .attr({fill: clr, stroke: clr, title: title});
             }
         }
 
