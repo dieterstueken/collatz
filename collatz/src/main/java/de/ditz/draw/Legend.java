@@ -36,7 +36,7 @@ public class Legend {
 
     void ticks(Graphics g, double step, boolean major) {
         int count = (int) Math.ceil(scale.width() / step);
-        // 5 pixel minimum
+        // 5 pixel minimum per tick
         if(5*count>scale.len())
             return;
         double start = step * Math.ceil(scale.off/step);
@@ -48,27 +48,46 @@ public class Legend {
 
     void drawTick(Graphics g, double pos, boolean major) {
         int ix = scale.pix(pos);
+
         if(ix>=0 && ix<=scale.len()) {
-            int i0 = other.mirror(0);
-            int i5 = other.mirror(5);
-            int i1 = major ? other.mirror(other.len()) : i5;
-            drawLine(g, ix, i0, i1);
-            if(major)
-                drawLabel(g, pos, ix, i5);
+            if(major) {
+                drawLine(g, pos);
+                drawLabel(g, pos, ix, 5);
+            } else {
+                drawLine(g, pos, 5);
+            }
         }
     }
 
-    void drawLine(Graphics g, int ix, int i0, int i1) {
+    void drawLine(Graphics g, double pos) {
+        drawLine(g, pos, other.len());
+    }
+
+    void drawLine(Graphics g, double pos, int len) {
+        int ix = scale.pix(pos);
+        int iy0 = other.mirror(0);
+        int iy1 = other.mirror(len);
+
         Color saved = g.getColor();
         g.setColor(Color.lightGray);
-        if(xy)
-            g.drawLine(ix, i0, ix, i1);
-        else
-            g.drawLine(i0, ix, i1, ix);
-        g.setColor(saved);
+        try {
+            if (xy)
+                g.drawLine(ix, iy0, ix, iy1);
+            else
+                g.drawLine(iy0, ix, iy1, ix);
+        } finally {
+            g.setColor(saved);
+        }
     }
 
     void drawLabel(Graphics g, double value, int ix, int iy) {
+
+        // prevent overlap
+        if(!xy && ix<25)
+            return;
+
+        iy = other.mirror(iy);
+
         String label = String.format("%.1f", value);
 
         if(xy)
