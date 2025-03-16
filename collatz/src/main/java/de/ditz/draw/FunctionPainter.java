@@ -18,10 +18,10 @@ public class FunctionPainter extends JPanel {
         setPreferredSize(new Dimension(300, 150));
         setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
 
-        Diagram digram = new FunctionDiagram(this::f);
-        add(digram);
+        LabeledPane diagram = new FunctionDiagram(this::f);
+        add(diagram);
 
-        maxModel.addChangeListener(e -> digram.repaint());
+        maxModel.addChangeListener(e -> diagram.repaint());
         JSlider maxSlider = new JSlider(maxModel);
 
         maxSlider.setMajorTickSpacing(100);

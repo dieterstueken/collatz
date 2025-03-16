@@ -6,7 +6,7 @@ package de.ditz.draw;
  * Date: 30.06.24
  * Time: 15:58
  */
-public class CollazDiagram extends Diagram {
+public class CollazDiagram extends LabeledPane {
 
 
 

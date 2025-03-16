@@ -9,7 +9,7 @@ import java.util.function.DoubleUnaryOperator;
  * Date: 30.06.24
  * Time: 15:54
  */
-public class FunctionDiagram extends Diagram {
+public class FunctionDiagram extends LabeledPane {
 
     final DoubleUnaryOperator function;
 
@@ -18,9 +18,9 @@ public class FunctionDiagram extends Diagram {
     }
 
     int fy(int ix) {
-          double x = sx.val(ix);
+          double x = scales.sx.val(ix);
           double y = function.applyAsDouble(x);
-          return sy.pix(y);
+          return scales.sy.pix(y);
     }
 
     @Override

@@ -1,8 +1,5 @@
 package de.ditz.draw;
 
-import java.awt.Color;
-import java.awt.Graphics;
-import java.util.function.DoubleConsumer;
 import java.util.function.IntSupplier;
 
 /**
@@ -11,104 +8,105 @@ import java.util.function.IntSupplier;
  * Date: 04.07.21
  * Time: 21:09
  */
-abstract class Scale {
+public class Scale {
 
     final String name;
 
-    double origin = 0;
+    // current length
     final IntSupplier len;
 
-    double scale = 1.0 / 256;
+    double off; // value at ix==x0
+    double dpu; // dots per unit, mirrored if < 0
 
-    Scale(IntSupplier len, String name) {
+    Scale(double off, double dpu, IntSupplier len, String name) {
         this.name = name;
         this.len = len;
+        this.off = off;
+        this.dpu = dpu;
+        if(dpu==0)
+            throw new IllegalArgumentException("negative zoom factor");
+    }
+
+    Scale(IntSupplier len, String name) {
+        this(0.0, 256.0, len, name);
     }
 
     @Override
     public String toString() {
-        return String.format("%s[%d]", name, len());
-    }
-
-    int pix(double value) {
-        if(Double.isNaN(value))
-            return 0;
-
-        double pix = (value - origin) / scale;
-        pix = Math.max(pix, Short.MIN_VALUE);
-        pix = Math.min(pix, Short.MAX_VALUE);
-        pix = Math.rint(pix);
-        return mirror((int) pix);
+        return String.format("%s[%d:%.1f-%.1f]", name, len(), val(0), val(len()));
     }
 
     int len() {
         return this.len.getAsInt();
     }
 
-    double val(int pix) {
-        return origin + mirror(pix) * scale;
+    double width() {
+        return Math.abs(len()/dpu);
+    }
+
+    Scale mirror() {
+        dpu *= -1;
+        return this;
     }
 
     int mirror(int pix) {
+        if(dpu<0)
+            pix = len() - pix;
         return pix;
     }
 
+    /**
+     * Pixel coordinate by value.
+     * @param value to transform.
+     * @return nearest pixel coordinate.
+     */
+    int pix(double value) {
+        if(Double.isNaN(value))
+            return 0;
+
+        double pix = (value - off) * dpu;
+        pix = Math.max(pix, Short.MIN_VALUE);
+        pix = Math.min(pix, Short.MAX_VALUE);
+        pix = Math.rint(pix);
+
+        if(dpu<0)
+            pix += len();
+
+        return (int) pix;
+    }
+
+    /**
+     * pixel to value.
+     * @param pix pixel value
+     * @return double value by origin and scale
+     */
+    double val(int pix) {
+        if(dpu<0)
+            pix -= len();
+        return off + pix/dpu;
+    }
+
+    /**
+     * Perform a zoom at a given pixel position.
+     * The value for that pixel must stay.
+     * @param f zoom factor.
+     * @param pix position to stay stable.
+     */
     void zoom(double f, int pix) {
-        double center = val(pix);
-        scale *= f;
-        origin = center - mirror(pix) * scale;
+        if(f>0) {
+            if(dpu<0)
+                pix -= len();
+            dpu *= f;
+            off += pix / dpu * (f-1);
+        } else
+            throw new IllegalArgumentException("negative zoom factor");
     }
 
+    /**
+     * Pan by pix.
+     * @param pix to pan
+     */
     void pan(int pix) {
-        origin -= pix * scale;
+        off -= pix / dpu;
     }
-
-    void ticks(double step, DoubleConsumer ticker) {
-        int count = (int) Math.ceil(len() * scale / step);
-
-        // 5 pixel minimum
-        if(5*count>len())
-            return;
-
-        double start = step * Math.ceil(origin/step);
-
-        for(int i=0; i<count; ++i) {
-            ticker.accept(start + i*step);
-        }
-    }
-
-    void drawTicks(Graphics g, Scale other) {
-        int len = len();
-        double range = len * scale;
-        double step = Math.pow(10, Math.floor(Math.log10(range)));
-
-        ticks(step, x -> drawLine(g, other, x, true));
-        ticks(step/10, x -> drawLine(g, other, x, false));
-    }
-
-    void drawLine(Graphics g, Scale other, double pos, boolean major) {
-        int pix = pix(pos);
-        if(pix>=0 && pix<=len()) {
-            other.drawLine(g, pix, major);
-            if(major)
-                other.drawLabel(g, pos, pix);
-        }
-    }
-
-    void drawLabel(Graphics g, double value, int ix) {
-        String label = String.format("%.1f", value);
-        drawLabel(g, label, ix);
-    }
-
-    abstract void drawLabel(Graphics g, String label, int ix);
-
-    void drawLine(Graphics g, int pix, boolean major) {
-        int len = major ? len() : 5;
-        Color saved = g.getColor();
-        g.setColor(Color.lightGray);
-        drawLine(g, pix, mirror(0), mirror(len));
-        g.setColor(saved);
-    }
-
-    abstract void drawLine(Graphics g, int pix, int iy0, int iy1);
 }
