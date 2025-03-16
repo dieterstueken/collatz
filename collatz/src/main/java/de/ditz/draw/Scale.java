@@ -86,6 +86,22 @@ public class Scale {
         return off + pix/dpu;
     }
 
+    double mval(int pix) {
+        return val(mirror(pix));
+    }
+
+    int mpix(double value) {
+        return mirror(pix(value));
+    }
+
+    double lower() {
+        return val(mirror(0));
+    }
+
+    double upper() {
+        return val(mirror(len()));
+    }
+
     /**
      * Perform a zoom at a given pixel position.
      * The value for that pixel must stay.

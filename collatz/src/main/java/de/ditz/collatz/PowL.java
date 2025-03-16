@@ -8,10 +8,13 @@ public class PowL {
     public static void main(String[] args) {
         Integer hit = args.length>0 ? Integer.parseInt(args[0]) : null;
         new PowL(hit, 10).run(70);
+
+        BigInteger R10_8 = I3.modPow(BigInteger.valueOf(256-10), BigInteger.valueOf(256));
+        System.out.println(R10_8);
     }
 
-    final BigInteger I1 = BigInteger.valueOf(1);
-    final BigInteger I3 = BigInteger.valueOf(3);
+    static final BigInteger I1 = BigInteger.valueOf(1);
+    static final BigInteger I3 = BigInteger.valueOf(3);
 
     BigInteger p3 = BigInteger.valueOf(1);
     final int[] pl;
@@ -29,7 +32,7 @@ public class PowL {
 
     void head() {
 
-        System.out.print("   ");
+        System.out.print("k/l");
         for(int l=1; l<width+1; ++l) {
             System.out.format(fmt(l), l);
         }
