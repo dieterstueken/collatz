@@ -11,35 +11,79 @@ import java.awt.*;
  */
 public class CollatzDiagram extends LabeledPane {
 
+    static final double L32 = 1.0/Math.log(1.5);
 
-    static final double L15 = Math.log(1.5);
+    static double l15(double value) {
+        return Math.log(value) * L32;
+    }
+
+    static double p15(double value) {
+        return Math.pow(1.5, value);
+    }
 
     @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
 
-        double xl = scales.sx.lower();
-        double xh = scales.sx.upper();
+        final double xl = scales.sx.lower();
+        final double xh = scales.sx.upper();
 
-        double yl = scales.sy.lower();
-        double yh = scales.sy.upper();
+        final double yl = scales.sy.lower();
+        final double yh = scales.sy.upper();
 
-        // horizontal path
-        for(int ky = (int) Math.ceil(yl); ky<yh; ++ky) {
+        // k = p15(t)
+        // y = 1-1/k
+        // k = 1/(1-y)
 
-            double kl = Math.pow(1.5, ky+xl);
+        if(yl>=1 || yh<=0)
+            return;
 
-            for(long k = (long) Math.ceil(kl); k<1000000; ++k) {
-                double x = Math.log(k)/L15 - ky;
-                if(x>xh)
-                    break;
+        long k0 = Math.max(1, (long) Math.ceil(1/(1-yl)));
+        long k = k0;
+        int iy = scales.sy.pix((k-1.0)/k);
 
-                int ix = scales.sx.pix(x);
-                int iy = scales.sy.pix(ky);
+        // pixel drawn per scanline
+        int lx = 3*scales.sx.len();
+        int mx = 0;
 
-                g.drawRect(ix-1, iy+1,3,3);
+        // y shrinks towards 0
+        while(iy>=0) {
+
+            double t = l15(k);
+            t += (int)Math.ceil(xl-t);
+
+            for(; t<=xh; t += 1.0) {
+                int ix = scales.sx.pix(t);
+                g.fillRect(ix, iy-1, 3, 3);
+                ++mx;
             }
+
+            ++k;
+            double y = (k-1.0)/k;
+            int ny = scales.sy.pix(y);
+
+            if(ny==iy) {
+                // same scanline
+                if (mx > lx) {
+                    // skip ahead
+                    ny = iy - 1;
+                    y = scales.sy.val(ny);
+                    if (y > 1)
+                        break;
+
+                    long kn = (long) Math.ceil(1 / (1 - y));
+                    if (kn <= k)
+                        throw new IllegalStateException("k not growing");
+                    k = kn;
+                }
+            } else {
+                mx=0;
+            }
+            iy = ny;
         }
+
+        k -= k0;
+        k = 0;
     }
 
     static void open() {
