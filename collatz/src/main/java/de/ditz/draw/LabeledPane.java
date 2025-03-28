@@ -12,8 +12,13 @@ public class LabeledPane extends Pane {
 
       final Legend2D legends;
 
-      public LabeledPane() {
+      public LabeledPane(double dpu) {
+            super(dpu);
             legends = new Legend2D(scales);
+      }
+
+      public LabeledPane() {
+            this(256);
       }
 
       @Override

@@ -18,8 +18,8 @@ public class Pane extends JPanel {
 
     final Scale2D scales;
 
-    public Pane() {
-        scales = new Scale2D(this::getWidth, this::getHeight);
+    public Pane(double dpu) {
+        scales = new Scale2D(this::getWidth, this::getHeight, dpu);
 
         Border border = BorderFactory.createLineBorder(Color.BLACK);
         setBorder(border);
@@ -28,6 +28,16 @@ public class Pane extends JPanel {
         addMouseListener(adapter);
         addMouseMotionListener(adapter);
         addMouseWheelListener(adapter);
+    }
+
+    void pan(int ix, int iy) {
+        scales.sx.pan(ix);
+        scales.sy.pan(iy);
+    }
+
+    void zoom(int ix, int iy, double fx, double fy) {
+        scales.sx.zoom(fx, ix);
+        scales.sy.zoom(fy, iy);
     }
 
     MouseAdapter mouseAdapter() {
@@ -52,7 +62,7 @@ public class Pane extends JPanel {
                 public void mouseDragged(MouseEvent e) {
                       int m = e.getModifiersEx() & InputEvent.BUTTON1_DOWN_MASK;
                       if(m!=0) {
-                            scales.pan(e.getX() - ix, e.getY() - iy);
+                            pan(e.getX() - ix, e.getY() - iy);
                             setPos(e);
                             repaint();
                       }
@@ -67,15 +77,12 @@ public class Pane extends JPanel {
                 public void mouseWheelMoved(MouseWheelEvent e) {
                       int m = e.getModifiersEx();
                       if((m & InputEvent.BUTTON1_DOWN_MASK)==0) {
-                            double factor = 1 - e.getPreciseWheelRotation() / 10;
+                          double factor = 1 - e.getPreciseWheelRotation() / 10;
+                          double fx = (m & InputEvent.CTRL_DOWN_MASK)==0 ? factor : 1.0;
+                          double fy = (m & InputEvent.SHIFT_DOWN_MASK)==0 ? factor : 1.0;
 
-                            if((m & InputEvent.CTRL_DOWN_MASK)==0)
-                                  scales.sx.zoom(factor, e.getX());
-
-                            if((m & InputEvent.SHIFT_DOWN_MASK)==0)
-                                  scales.sy.zoom(factor, e.getY());
-
-                            repaint();
+                          zoom(e.getX(), e.getY(), fx, fy);
+                          repaint();
                       }
                 }
           };

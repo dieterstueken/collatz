@@ -13,13 +13,8 @@ public class Scale2D {
     final Scale sx;
     final Scale sy;
 
-    Scale2D(IntSupplier width, IntSupplier height) {
-        sx = new Scale(width, "Sx");
-        sy = new Scale(height, "Sy").mirror();
-    }
-
-    void pan(int ix, int iy) {
-        sx.pan(ix);
-        sy.pan(iy);
+    Scale2D(IntSupplier width, IntSupplier height, double dpu) {
+        sx = new Scale(0, dpu, width, "Sx");
+        sy = new Scale(0, dpu, height, "Sy").mirror();
     }
 }

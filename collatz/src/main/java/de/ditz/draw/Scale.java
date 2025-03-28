@@ -106,6 +106,14 @@ public class Scale {
         return val(mirror(len()));
     }
 
+    double center() {
+        return (val(0) + val(len()))/2;
+    }
+
+    double dpu() {
+        return dpu;
+    }
+
     /**
      * Perform a zoom at a given pixel position.
      * The value for that pixel must stay.
