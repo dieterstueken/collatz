@@ -15,20 +15,20 @@ public class Scale {
     // current length
     final IntSupplier len;
 
-    double off; // value at ix==x0
-    double dpu; // dots per unit, mirrored if < 0
+    double x0; // value at ix==x0
+    double width; // mirrored if < 0
 
-    Scale(double off, double dpu, IntSupplier len, String name) {
+    Scale(double x0, double width, IntSupplier len, String name) {
         this.name = name;
         this.len = len;
-        this.off = off;
-        this.dpu = dpu;
-        if(dpu==0)
+        this.x0 = x0;
+        this.width = width;
+        if(width==0)
             throw new IllegalArgumentException("negative zoom factor");
     }
 
     Scale(IntSupplier len, String name) {
-        this(0.0, 256.0, len, name);
+        this(0.0, 1.0, len, name);
     }
 
     @Override
@@ -41,16 +41,16 @@ public class Scale {
     }
 
     double width() {
-        return Math.abs(len()/dpu);
+        return Math.abs(width);
     }
 
     Scale mirror() {
-        dpu *= -1;
+        width *= -1;
         return this;
     }
 
     int mirror(int pix) {
-        if(dpu<0)
+        if(width<0)
             pix = len() - pix;
         return pix;
     }
@@ -64,13 +64,16 @@ public class Scale {
         if(Double.isNaN(value))
             return 0;
 
-        double pix = (value - off) * dpu;
+        int len = len();
+
+        double pix = (value - x0) * len / width;
+        if(width<0) {
+            pix += len;
+        }
+
         pix = Math.max(pix, Short.MIN_VALUE);
         pix = Math.min(pix, Short.MAX_VALUE);
         pix = Math.rint(pix);
-
-        if(dpu<0)
-            pix += len();
 
         return (int) pix;
     }
@@ -81,9 +84,10 @@ public class Scale {
      * @return double value by origin and scale
      */
     double val(int pix) {
-        if(dpu<0)
-            pix -= len();
-        return off + pix/dpu;
+        int len = len();
+        if(width<0)
+            pix -= len;
+        return x0 + width*pix/len;
     }
 
     double mval(int pix) {
@@ -110,10 +114,11 @@ public class Scale {
      */
     void zoom(double f, int pix) {
         if(f>0) {
-            if(dpu<0)
-                pix -= len();
-            dpu *= f;
-            off += pix / dpu * (f-1);
+            int len = len();
+            if(width<0)
+                pix -= len;
+            width /= f;
+            x0 += pix * width / len * (f-1);
         } else
             throw new IllegalArgumentException("negative zoom factor");
     }
@@ -123,6 +128,6 @@ public class Scale {
      * @param pix to pan
      */
     void pan(int pix) {
-        off -= pix / dpu;
+        x0 -= pix * width / len();
     }
 }

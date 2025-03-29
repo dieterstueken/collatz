@@ -31,15 +31,25 @@ public class CollatzDiagram extends LabeledPane {
         final double yl = scales.sy.lower();
         final double yh = scales.sy.upper();
 
-        for(long k = Math.max(1L, (long)Math.ceil(yl)); k<yh; ++k) {
-            int iy = scales.sy.pix(k);
+        // y = l15(k)
 
-            double t = l15(k);
-            t += (int)Math.ceil(xl-t);
-            
+        long k = (long) Math.ceil(p15(Math.max(0.0, yl)));
+        double y = l15(k);
+        while(y<yh) {
+            int iy = scales.sy.pix(y);
+
+            double t = y + (int)Math.ceil(Math.max(0, xl)-y);
             for(; t<=xh; t += 1.0) {
                 int ix = scales.sx.pix(t);
                 g.fillRect(ix, iy-1, 3, 3);
+            }
+
+            y = l15(++k);
+            int jy = scales.sy.pix(y);
+            if(jy==iy) {
+                y = scales.sy.val(iy-1);
+                k = (int) Math.ceil(p15(Math.max(0.0, y)));
+                y = l15(k);
             }
         }
     }

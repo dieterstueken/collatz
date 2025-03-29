@@ -39,7 +39,7 @@ public class Legend {
         // 5 pixel minimum per tick
         if(5*count>scale.len())
             return;
-        double start = step * Math.ceil(scale.off/step);
+        double start = step * Math.ceil(scale.x0/step);
         for(int i=0; i<count; ++i) {
             double pos = start + i*step;
             drawTick(g, pos, major);
