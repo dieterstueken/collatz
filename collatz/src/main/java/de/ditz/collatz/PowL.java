@@ -16,7 +16,6 @@ public class PowL {
     static final BigInteger I1 = BigInteger.valueOf(1);
     static final BigInteger I3 = BigInteger.valueOf(3);
 
-    BigInteger p3 = BigInteger.valueOf(1);
     final int[] pl;
 
     final Integer hit;
@@ -40,14 +39,15 @@ public class PowL {
     }
 
     void run(int lines) {
+        BigInteger p3 = BigInteger.valueOf(1);
         for(int k=0; k<lines; ++k) {
-            line(k);
+            line(k, p3);
             p3 = p3.multiply(I3);
         }
     }
 
 
-    void line(int k) {
+    void line(int k, final BigInteger p3) {
         System.out.format("%2d ", k);
 
         Arrays.fill(pl, 0);

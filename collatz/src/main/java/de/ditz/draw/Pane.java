@@ -35,9 +35,9 @@ public class Pane extends JPanel {
         scales.sy.pan(iy);
     }
 
-    void zoom(int ix, int iy, double fx, double fy) {
-        scales.sx.zoom(fx, ix);
-        scales.sy.zoom(fy, iy);
+    void zoom(int ix, int iy, double sx, double sy) {
+        scales.sx.zoom(sx, ix);
+        scales.sy.zoom(sy, iy);
     }
 
     MouseAdapter mouseAdapter() {
@@ -58,7 +58,12 @@ public class Pane extends JPanel {
                       }
                 }
 
-                @Override
+              @Override
+              public void mouseMoved(MouseEvent e) {
+                  movedTo(e.getX(), e.getY());
+              }
+
+              @Override
                 public void mouseDragged(MouseEvent e) {
                       int m = e.getModifiersEx() & InputEvent.BUTTON1_DOWN_MASK;
                       if(m!=0) {
@@ -77,14 +82,17 @@ public class Pane extends JPanel {
                 public void mouseWheelMoved(MouseWheelEvent e) {
                       int m = e.getModifiersEx();
                       if((m & InputEvent.BUTTON1_DOWN_MASK)==0) {
-                          double factor = 1 - e.getPreciseWheelRotation() / 10;
-                          double fx = (m & InputEvent.CTRL_DOWN_MASK)==0 ? factor : 1.0;
-                          double fy = (m & InputEvent.SHIFT_DOWN_MASK)==0 ? factor : 1.0;
+                          double s = e.getPreciseWheelRotation();
+                          double sx = (m & InputEvent.CTRL_DOWN_MASK)==0 ? s : 0;
+                          double sy = (m & InputEvent.SHIFT_DOWN_MASK)==0 ? s : 0;
 
-                          zoom(e.getX(), e.getY(), fx, fy);
+                          zoom(e.getX(), e.getY(), sx, sy);
                           repaint();
                       }
                 }
           };
+    }
+
+    protected void movedTo(int x, int y) {
     }
 }

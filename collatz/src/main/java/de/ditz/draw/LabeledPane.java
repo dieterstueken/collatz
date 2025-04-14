@@ -24,6 +24,10 @@ public class LabeledPane extends Pane {
       @Override
       public void paintComponent(Graphics g) {
             super.paintComponent(g);
+            paint2D((Graphics2D) g);
+      }
+
+      public void paint2D(Graphics2D g) {
             legends.drawTicks(g);
       }
 }

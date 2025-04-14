@@ -18,7 +18,8 @@ public class Legend2D {
         ly = Legend.of(scales, false);
     }
 
-    public void drawTicks(Graphics g) {
+    public void drawTicks(Graphics2D g) {
+        g.setColor(Color.black);
         lx.drawTicks(g);
         ly.drawTicks(g);
     }

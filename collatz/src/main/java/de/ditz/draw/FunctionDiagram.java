@@ -24,8 +24,8 @@ public class FunctionDiagram extends LabeledPane {
     }
 
     @Override
-    public void paintComponent(Graphics g) {
-        super.paintComponent(g);
+    public void paint2D(Graphics2D g) {
+        super.paint2D(g);
 
         int width = this.getWidth();
         int iy = fy(0);

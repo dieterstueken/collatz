@@ -22,8 +22,8 @@ public class CollatzDiagram1 extends LabeledPane {
     }
 
     @Override
-    public void paintComponent(Graphics g) {
-        super.paintComponent(g);
+    public void paint2D(Graphics2D g) {
+        super.paint2D(g);
 
         final double xl = scales.sx.lower();
         final double xh = scales.sx.upper();

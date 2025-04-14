@@ -28,13 +28,13 @@ public class Legend {
             return new Legend(scales.sy, scales.sx, false);
     }
 
-    void drawTicks(Graphics g) {
+    void drawTicks(Graphics2D g) {
         double step = Math.pow(10, Math.floor(Math.log10(scale.width())));
         ticks(g, step, true);
         ticks(g, step/10, false);
     }
 
-    void ticks(Graphics g, double step, boolean major) {
+    void ticks(Graphics2D g, double step, boolean major) {
         int count = (int) Math.ceil(scale.width() / step);
         // 5 pixel minimum per tick
         if(5*count>scale.len())
@@ -46,7 +46,7 @@ public class Legend {
         }
     }
 
-    void drawTick(Graphics g, double pos, boolean major) {
+    void drawTick(Graphics2D g, double pos, boolean major) {
         int ix = scale.pix(pos);
 
         if(ix>=0 && ix<=scale.len()) {
@@ -59,11 +59,11 @@ public class Legend {
         }
     }
 
-    void drawLine(Graphics g, double pos) {
+    void drawLine(Graphics2D g, double pos) {
         drawLine(g, pos, other.len());
     }
 
-    void drawLine(Graphics g, double pos, int len) {
+    void drawLine(Graphics2D g, double pos, int len) {
         int ix = scale.pix(pos);
         int iy0 = other.mirror(0);
         int iy1 = other.mirror(len);
@@ -80,7 +80,7 @@ public class Legend {
         }
     }
 
-    void drawLabel(Graphics g, double value, int ix, int iy) {
+    void drawLabel(Graphics2D g, double value, int ix, int iy) {
 
         // prevent overlap
         if(!xy && ix<25)
