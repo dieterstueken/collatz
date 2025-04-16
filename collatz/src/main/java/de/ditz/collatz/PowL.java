@@ -7,7 +7,7 @@ public class PowL {
 
     public static void main(String[] args) {
         Integer hit = args.length>0 ? Integer.parseInt(args[0]) : null;
-        new PowL(hit, 10).run(70);
+        new PowL(hit, 10).run(15);
 
         BigInteger R10_8 = I3.modPow(BigInteger.valueOf(256-10), BigInteger.valueOf(256));
         System.out.println(R10_8);
@@ -54,19 +54,19 @@ public class PowL {
         BigInteger p3n = p3.subtract(I1);
         BigInteger p32 = p3.add(p3);
         int nl = 0;
+        // try all odd factors
         for(int n=1; n<2<<width; n +=2, p3n = p3n.add(p32)) {
+
             int l = p3n.getLowestSetBit();
             if(l<0)
-                continue;
+                l = width;
+            else
+                l = Math.min(l, width);
 
-            if(l>width)
-                continue;
-            
-            if(pl[l-1]==0) {
-                pl[l-1] = n;
-                ++nl;
-                if(nl>=width)
-                    break;
+            while(--l>=0) {
+                if (pl[l] == 0) {
+                    pl[l] = n;
+                }
             }
         }
 
@@ -79,11 +79,9 @@ public class PowL {
     }
 
     static String fmt(int i) {
-        if(i<3) return "%2d";
-        if(i<6) return "%3d";
-        if(i<8) return "%4d";
-        if(i<12) return "%5d";
-        if(i<16) return "6d";
-        return "%7d";
+        if(i<=4) return "%2X";
+        if(i<=8) return "%3X";
+        if(i<=12) return "%4X";
+        return "%5X";
     }
 }
