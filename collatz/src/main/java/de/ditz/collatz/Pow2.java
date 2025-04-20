@@ -13,7 +13,7 @@ public class Pow2 {
     public static final BigInteger I1 = BigInteger.valueOf(1);
     public static final BigInteger I2 = BigInteger.valueOf(2);
 
-    static final Digitizer dig = new Digitizer(".12") ;
+    static final Digitizer dig = new Digitizer(".12", true) ;
 
     public static void main(String ... args) {
         BigInteger p2 = I2;

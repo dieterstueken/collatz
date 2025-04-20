@@ -28,8 +28,8 @@ public class Digitizer {
     public StringBuilder digits(BigInteger n, int limit) {
         result.setLength(0);
 
-        if(n.signum()==0)
-            result.append('0');
+        //if(n.signum()==0)
+        //    result.append('0');
 
         while(n.signum() > 0 && result.length() < limit) {
             int digit = n.remainder(base).intValue();
