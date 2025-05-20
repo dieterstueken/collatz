@@ -41,7 +41,7 @@
 
             hist.path(path).attr({stroke: "black"});
 
-            const lnf = Math.log(fact.value);
+            const lnf = Math.log(fn.value) - Math.log(fk.value);
             const max = Math.min(Math.exp(lnf * turn.value), 100000);
 
             for(var i=1; i<2*max; ++i) {
@@ -71,7 +71,8 @@
  </head>
 
  <body>
-        fact:<input id="fact" type="text" value="1.5"/>
+        n:<input id="fn" type="text" value="3"/>
+        k:<input id="fk" type="text" value="2"/>
         turn:<input id="turn" type="text" value="10"/>
         dist:<input id="dist" type="text" value="10"/>
         <input id="run" type="button" value="run"/>

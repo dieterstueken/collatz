@@ -127,6 +127,10 @@ public class Scale {
             throw new IllegalArgumentException("negative zoom factor");
     }
 
+    void scale(double step, int pix) {
+        zoom(Math.pow(1.125, -step), pix);
+    }
+
     /**
      * Pan by pix.
      * @param pix to pan

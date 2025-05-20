@@ -2,6 +2,7 @@ package de.ditz.draw;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.function.Function;
 
 /**
  * Created by IntelliJ IDEA.
@@ -9,7 +10,15 @@ import java.awt.*;
  * Date: 30.06.24
  * Time: 15:58
  */
-public class CollatzDiagram extends LabeledPane {
+public class CollatzDiagram implements Paint2D {
+
+    public static void main(String ... args) {
+        open(CollatzDiagram::new);
+    }
+
+    static void open(Function<Scale2D, Paint2D> painter) {
+        SwingUtilities.invokeLater(() -> Pane2D.open(painter));
+    }
 
     static final double L32 = 1.0/Math.log(1.5);
 
@@ -21,9 +30,13 @@ public class CollatzDiagram extends LabeledPane {
         return Math.pow(1.5, value);
     }
 
-    @Override
-    public void paintComponent(Graphics g) {
-        super.paintComponent(g);
+    final Scale2D scales;
+
+    public CollatzDiagram(Scale2D scales) {
+        this.scales = scales;
+    }
+
+    public void paint2D(Graphics2D g) {
 
         final double xl = scales.sx.lower();
         final double xh = scales.sx.upper();
@@ -52,25 +65,5 @@ public class CollatzDiagram extends LabeledPane {
                 y = l15(k);
             }
         }
-    }
-
-    static void open() {
-        JPanel p = new JPanel();
-        p.setLayout(new BoxLayout(p, BoxLayout.PAGE_AXIS));
-        p.setPreferredSize(new Dimension(300, 150));
-        p.setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
-
-        p.add(new CollatzDiagram());
-
-        JFrame frame = new JFrame("Paint");
-        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        frame.setContentPane(p);
-
-        frame.pack();
-        frame.setVisible(true);
-    }
-
-    public static void main(String ... args) {
-        SwingUtilities.invokeLater(CollatzDiagram::open);
     }
 }

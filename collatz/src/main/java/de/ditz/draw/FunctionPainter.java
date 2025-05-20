@@ -1,70 +1,41 @@
 package de.ditz.draw;
 
-import javax.swing.*;
 import java.awt.*;
+import java.util.function.DoubleUnaryOperator;
 
 /**
  * Created by IntelliJ IDEA.
  * User: stueken
- * Date: 04.07.21
- * Time: 18:39
+ * Date: 30.06.24
+ * Time: 15:54
  */
-public class FunctionPainter extends JPanel {
+public class FunctionPainter implements Paint2D {
 
-    DefaultBoundedRangeModel maxModel = new DefaultBoundedRangeModel(5, 0, 0, 500);
+    final DoubleUnaryOperator function;
 
-    FunctionPainter() {
-        setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
-        setPreferredSize(new Dimension(300, 150));
-        setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
+    final Scale2D scales;
 
-        LabeledPane diagram = new FunctionDiagram(this::f);
-        add(diagram);
-
-        maxModel.addChangeListener(e -> diagram.repaint());
-        JSlider maxSlider = new JSlider(maxModel);
-
-        maxSlider.setMajorTickSpacing(100);
-        maxSlider.setMinorTickSpacing(10);
-        maxSlider.setPaintTicks(true);
-        maxSlider.setPaintLabels(true);
-
-        maxSlider.setBorder(
-                        BorderFactory.createEmptyBorder(15,0,0,0));
-        add(maxSlider);
+    public FunctionPainter(Scale2D scales, DoubleUnaryOperator function) {
+        this.function = function;
+        this.scales = scales;
     }
 
-    void open() {
-
-        JFrame frame = new JFrame("Paint");
-        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        frame.setContentPane(this);
-        
-        frame.pack();
-        frame.setVisible(true);
+    int fy(int ix) {
+          double x = scales.sx.val(ix);
+          double y = function.applyAsDouble(x);
+          return scales.sy.pix(y);
     }
 
-    double fn(int n, double x) {
-        x /= n;
-        x -= 1;
-        x *= Math.PI;
-        return Math.sin(x)/Math.atan(x);
-    }
+    public void paint2D(Graphics2D g) {
 
-    double f(double x) {
+        int width = scales.sx.len();
+        int iy = fy(0);
+        Graphics2D gr = (Graphics2D) g;
 
-        double f = 1;
-        int max = maxModel.getValue();
-        for(int i=2; i<max; ++i)
-            f *= fn(i, x);
-
-        return f;
-    }
-
-    public static void main(String ... args) {
-
-        final FunctionPainter painter = new FunctionPainter();
-        
-        SwingUtilities.invokeLater(painter::open);
+        for(int ix=0; ix<width; ++ix) {
+              int ny = fy(ix+1);
+              gr.drawLine(ix, iy, ix+1, ny);
+              iy = ny;
+        }
     }
 }
