@@ -16,14 +16,14 @@ public class Scale {
     final IntSupplier len;
 
     double x0; // value at ix==x0
-    double width; // mirrored if < 0
+    double dpu; // mirrored if < 0
 
-    Scale(double x0, double width, IntSupplier len, String name) {
+    Scale(double x0, double dpu, IntSupplier len, String name) {
         this.name = name;
         this.len = len;
         this.x0 = x0;
-        this.width = width;
-        if(width==0)
+        this.dpu = dpu;
+        if(dpu==0)
             throw new IllegalArgumentException("negative zoom factor");
     }
 
@@ -41,18 +41,12 @@ public class Scale {
     }
 
     double width() {
-        return Math.abs(width);
+        return len()/Math.abs(dpu);
     }
 
     Scale mirror() {
-        width *= -1;
+        dpu *= -1;
         return this;
-    }
-
-    int mirror(int pix) {
-        if(width<0)
-            pix = len() - pix;
-        return pix;
     }
 
     /**
@@ -66,8 +60,8 @@ public class Scale {
 
         int len = len();
 
-        double pix = (value - x0) * len / width;
-        if(width<0) {
+        double pix = (value - x0) * dpu;
+        if(dpu<0) {
             pix += len;
         }
 
@@ -85,25 +79,36 @@ public class Scale {
      */
     double val(int pix) {
         int len = len();
-        if(width<0)
+        if(dpu<0)
             pix -= len;
-        return x0 + width*pix/len;
+        return x0 + pix/dpu;
+    }
+
+    /**
+     * Mirror pixel value if dpu < 0 (y-axis)
+     * @param pix coord
+     * @return pix or len-pix
+     */
+    int mirr(int pix) {
+        if(dpu<0)
+            pix = len() - pix;
+        return pix;
     }
 
     double mval(int pix) {
-        return val(mirror(pix));
+        return val(mirr(pix));
     }
 
     int mpix(double value) {
-        return mirror(pix(value));
+        return mirr(pix(value));
     }
 
     double lower() {
-        return val(mirror(0));
+        return val(mirr(0));
     }
 
     double upper() {
-        return val(mirror(len()));
+        return val(mirr(len()));
     }
 
     double center() {
@@ -119,10 +124,10 @@ public class Scale {
     void zoom(double f, int pix) {
         if(f>0) {
             int len = len();
-            if(width<0)
+            if(dpu<0)
                 pix -= len;
-            width /= f;
-            x0 += pix * width / len * (f-1);
+            dpu *= f;
+            x0 += pix / dpu * (f-1);
         } else
             throw new IllegalArgumentException("negative zoom factor");
     }
@@ -136,6 +141,6 @@ public class Scale {
      * @param pix to pan
      */
     void pan(int pix) {
-        x0 -= pix * width / len();
+        x0 -= pix / dpu;
     }
 }

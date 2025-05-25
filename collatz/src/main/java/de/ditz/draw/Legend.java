@@ -13,6 +13,7 @@ public class Legend {
     final Scale scale;
     final Scale other;
 
+    // if false use yx
     final boolean xy;
 
     public Legend(Scale scale, Scale other, boolean xy) {
@@ -28,13 +29,13 @@ public class Legend {
             return new Legend(scales.sy, scales.sx, false);
     }
 
-    void drawTicks(Graphics2D g) {
+    public void drawTicks(Graphics2D g) {
         double step = Math.pow(10, Math.floor(Math.log10(scale.width())));
         ticks(g, step, true);
         ticks(g, step/10, false);
     }
 
-    void ticks(Graphics2D g, double step, boolean major) {
+    private void ticks(Graphics2D g, double step, boolean major) {
         int count = (int) Math.ceil(scale.width() / step);
         // 5 pixel minimum per tick
         if(5*count>scale.len())
@@ -46,27 +47,26 @@ public class Legend {
         }
     }
 
-    void drawTick(Graphics2D g, double pos, boolean major) {
+    private void drawTick(Graphics2D g, double pos, boolean major) {
         int ix = scale.pix(pos);
 
         if(ix>=0 && ix<=scale.len()) {
             if(major) {
-                drawLine(g, pos);
+                drawLine(g, ix);
                 drawLabel(g, pos, ix, 5);
             } else {
-                drawLine(g, pos, 5);
+                drawLine(g, ix, 5);
             }
         }
     }
 
-    void drawLine(Graphics2D g, double pos) {
-        drawLine(g, pos, other.len());
+    private void drawLine(Graphics2D g, int ix) {
+        drawLine(g, ix, other.len());
     }
 
-    void drawLine(Graphics2D g, double pos, int len) {
-        int ix = scale.pix(pos);
-        int iy0 = other.mirror(0);
-        int iy1 = other.mirror(len);
+    private void drawLine(Graphics2D g, int ix, int ly) {
+        int iy0 = other.mirr(0);
+        int iy1 = other.mirr(ly);
 
         Color saved = g.getColor();
         g.setColor(Color.lightGray);
@@ -80,13 +80,13 @@ public class Legend {
         }
     }
 
-    void drawLabel(Graphics2D g, double value, int ix, int iy) {
+    private void drawLabel(Graphics2D g, double value, int ix, int iy) {
 
         // prevent overlap
         if(!xy && ix<25)
             return;
 
-        iy = other.mirror(iy);
+        iy = other.mirr(iy);
 
         String label = String.format("%.1f", value);
 
