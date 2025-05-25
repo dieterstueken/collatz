@@ -58,11 +58,9 @@ public class Scale {
         if(Double.isNaN(value))
             return 0;
 
-        int len = len();
-
         double pix = (value - x0) * dpu;
         if(dpu<0) {
-            pix += len;
+            pix += len();
         }
 
         pix = Math.max(pix, Short.MIN_VALUE);

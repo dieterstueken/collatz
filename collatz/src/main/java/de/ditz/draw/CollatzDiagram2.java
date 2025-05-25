@@ -21,9 +21,10 @@ public class CollatzDiagram2 extends AbstractDiagram {
     }
 
     static final double L2 = Math.log(2);
+    static final int DY = 16;
 
     static double l2(double value) {
-        return Math.log(value) * L2;
+        return Math.log(value) / L2;
     }
 
     static double p2(double value) {
@@ -32,31 +33,69 @@ public class CollatzDiagram2 extends AbstractDiagram {
 
     public void paint2D(Graphics2D g) {
 
+        baseline(g);
+
         final double xl = scales.sx.lower();
         final double xh = scales.sx.upper();
 
         final double yl = scales.sy.lower();
         final double yh = scales.sy.upper();
 
-        double mh = p2(Math.min(xh-1, 63));
+        long n = ((long) p2(xl-1));
+        if(n<2)
+            n=2;
 
-        for(long m = ((long) p2(xl-1)); m<mh; ++m) {
-            double x = l2(2.0*m+1);
-            double y = ln(m) - x;
+        double nh = p2(Math.min(xh-1, 63));
 
-            int ix = scales.sx.pix(x);
-            int iy = scales.sy.pix(y);
+        for(; n<nh; ++n) {
+            long m = 2*n+1;
+            
+            double x = l2(m);
+            double y = lm(m) - x;
 
-            int kx = scales.sx.pix(x + L32);
-            int ky = scales.sx.pix(y - L32);
+            if(y<yl)
+                continue;
 
-            g.drawLine(ix, iy, kx, ky);
+            long m1 = 3*(m+1)/2-1;
+            double x1 = l2(m1);
+            double y1 = y + x - x1;
+            if(y1>yh)
+                continue;
+
+            drawLine(g, x, y, x1, y1);
         }
-
     }
 
-    int ln(long m) {
-        int ln = 0;
+    void baseline(Graphics2D g) {
+        int iy = scales.sy.pix(0.0);
+        if(iy>=0 && iy<scales.sy.len()) {
+            int ix = scales.sx.pix(0.0);
+            g.setColor(Color.RED);
+            g.drawLine(ix, iy, scales.sx.len(), iy);
+        }
+    }
+
+    void drawLine(Graphics2D g, double x0, double y0, double x1, double y1) {
+        int ix = scales.sx.pix(x0);
+        int iy = scales.sy.pix(y0);
+        int kx = scales.sx.pix(x1);
+        int ky = scales.sy.pix(y1);
+
+        g.setColor(Color.RED);
+        g.drawLine(ix, iy, scales.sx.len(), iy);
+
+        g.setColor(Color.BLACK);
+        g.drawLine(ix, iy, ix, iy-DY);
+
+        g.setColor(Color.BLUE);
+        g.drawLine(ix, iy-DY, kx, ky-DY);
+
+        g.setColor(Color.BLACK);
+        g.drawLine(kx, ky-DY, kx, ky);
+    }
+
+    int lm(long m) {
+        int l = 0;
 
         while(m>1) {
             ++m;
@@ -64,11 +103,11 @@ public class CollatzDiagram2 extends AbstractDiagram {
                 m /= 2; m*= 3;
             }
             --m;
-            int l = Long.numberOfTrailingZeros(m);
-            m >>= l;
-            ln += l;
+            int l2 = Long.numberOfTrailingZeros(m);
+            m >>= l2;
+            l += l2;
         }
 
-        return ln;
+        return l;
     }
 }
