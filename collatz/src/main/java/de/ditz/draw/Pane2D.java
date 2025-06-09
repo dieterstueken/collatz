@@ -26,10 +26,14 @@ public class Pane2D extends JPanel {
         Border border = BorderFactory.createLineBorder(Color.BLACK);
         setBorder(border);
 
-        MouseAdapter adapter = new WheelMouse(scales, this::repaint);
+        MouseAdapter adapter = mouseAdapter();
         addMouseListener(adapter);
         addMouseMotionListener(adapter);
         addMouseWheelListener(adapter);
+    }
+
+    MouseAdapter mouseAdapter() {
+        return new WheelMouse(scales, this::repaint);
     }
 
     @Override

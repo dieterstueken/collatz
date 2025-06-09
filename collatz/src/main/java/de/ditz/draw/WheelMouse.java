@@ -5,6 +5,8 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
 
+import static de.ditz.draw.CollatzDiagram2.p2;
+
 /**
  * Created by IntelliJ IDEA.
  * User: stueken
@@ -48,6 +50,10 @@ public class WheelMouse extends MouseAdapter {
 
     @Override
     public void mouseMoved(MouseEvent e) {
+        double x = scales.sx.val(e.getX());
+        double y = scales.sy.val(e.getY());
+
+        System.out.format("%.1f %.1f\n", p2(x), p2(y));
     }
 
     @Override

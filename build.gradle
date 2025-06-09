@@ -20,8 +20,8 @@ allprojects {
 
             idea {
                 module {
-                    outputDir file('build/idea/main')
-                    testOutputDir file('build/idea/test')
+                    outputDir = file('build/idea/main')
+                    testOutputDir = file('build/idea/test')
                 }
             }
 
