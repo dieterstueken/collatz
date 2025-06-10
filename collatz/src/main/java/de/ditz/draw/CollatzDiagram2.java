@@ -41,13 +41,13 @@ public class CollatzDiagram2 extends AbstractDiagram {
         final double yl = scales.sy.lower();
         final double yh = scales.sy.upper();
 
-        long n = ((long) p2(xl-1));
-        if(n<0)
-            n=0;
+        //long n = ((long) p2(xl-1));
+        //if(n<0)
+        //    n=0;
 
         double nh = p2(Math.min(xh-1, 63));
 
-        for(; n<nh; ++n) {
+        for(long n=0; n<nh; ++n) {
             long m = 2*n+1;
             
             double x = l2(m);
@@ -65,11 +65,11 @@ public class CollatzDiagram2 extends AbstractDiagram {
             if(y1>yh)
                 continue;
 
-            drawLine(g, x, y, z, x1, y1, z1);
+            drawLine(g, m, x, y, z, x1, y1, z1);
         }
     }
 
-    void drawLine(Graphics2D g,
+    void drawLine(Graphics2D g, long m,
                   double x0, double y0, double z0,
                   double x1, double y1, double z1) {
         int ix = scales.sx.pix(x0);
@@ -79,19 +79,24 @@ public class CollatzDiagram2 extends AbstractDiagram {
         int ky = scales.sy.pix(y1);
         int kz = scales.sx.pix(z1);
 
-        int dy = scales.sy.pix(0) - scales.sy.pix(0.3);
+        int dy = scales.sy.pix(m==1?-1:0) - scales.sy.pix(0.3);
 
-        g.setColor(Color.RED);
-        g.drawLine(ix, iy, scales.sx.len(), iy);
+        g.setColor(m%3==0?Color.GREEN:Color.RED);
+        g.drawLine(Math.max(ix, 0), iy, scales.sx.len(), iy);
 
-        g.setColor(Color.BLACK);
-        g.drawLine(ix, iy, iz, iy-dy);
+        if(kz>=0) {
+            g.setColor(Color.BLACK);
+            g.drawLine(ix, iy, iz, iy - dy);
 
-        g.setColor(Color.BLUE);
-        g.drawLine(iz, iy-dy, kz, ky-dy);
+            g.setColor(Color.BLUE);
+            g.drawLine(iz, iy - dy, kz, ky - dy);
 
-        g.setColor(Color.BLACK);
-        g.drawLine(kz, ky-dy, kx, ky);
+            g.setColor(Color.BLACK);
+            if (m == 1)
+                g.drawLine(kz, ky - dy, kx, iy);
+            else
+                g.drawLine(kz, ky - dy, kx, ky);
+        }
     }
 
     void baseline(Graphics2D g) {
