@@ -33,7 +33,21 @@ public class Pane2D extends JPanel {
     }
 
     MouseAdapter mouseAdapter() {
-        return new WheelMouse(scales, this::repaint);
+        return new WheelMouse(scales) {
+            @Override
+            void repaint() {
+                Pane2D.this.repaint();
+            }
+
+            @Override
+            public void mouseMoved(double x, double y) {
+                Pane2D.this.mouseMoved(x, y);
+            }
+        };
+    }
+
+    protected void mouseMoved(double x, double y) {
+
     }
 
     @Override
@@ -69,14 +83,20 @@ public class Pane2D extends JPanel {
         return addPainter(painter.apply(scales));
     }
 
-    static void open(Function<Scale2D, Paint2D> painter) {
+    static void openFrame(Function<Scale2D, Paint2D> painter) {
+        Pane2D pane = Pane2D.labeled();
+        pane.addPainter(painter);
+
+        openFrame(pane);
+    }
+
+    static void openFrame(Component pane) {
+
         JPanel p = new JPanel();
         p.setLayout(new BoxLayout(p, BoxLayout.PAGE_AXIS));
         p.setPreferredSize(new Dimension(300, 150));
         p.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
-        Pane2D pane = Pane2D.labeled();
-        pane.addPainter(painter);
         p.add(pane);
 
         JFrame frame = new JFrame("Paint");

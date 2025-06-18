@@ -1,8 +1,7 @@
 package de.ditz.draw;
 
+import javax.swing.*;
 import java.awt.*;
-
-import static de.ditz.draw.CollatzDiagram.open;
 
 /**
  * Created by IntelliJ IDEA.
@@ -13,7 +12,25 @@ import static de.ditz.draw.CollatzDiagram.open;
 public class CollatzDiagram2 extends AbstractDiagram {
 
     public static void main(String ... args) {
-        open(CollatzDiagram2::new);
+        SwingUtilities.invokeLater(CollatzDiagram2::openFrame);
+    }
+
+    static void openFrame() {
+        Pane2D.openFrame(openPane());
+    }
+
+    static Pane2D openPane() {
+
+        Pane2D pane = new Pane2D(32) {
+
+            @Override
+            protected void mouseMoved(double x, double y) {
+                //super.mouseMoved(x, y);
+                System.out.format("%.0f %.1f\n", p2(x), p2(y));
+            }
+        };
+
+        return pane.addLabels().addPainter(CollatzDiagram2::new);
     }
 
     public CollatzDiagram2(Scale2D scales) {
@@ -21,7 +38,6 @@ public class CollatzDiagram2 extends AbstractDiagram {
     }
 
     static final double L2 = Math.log(2);
-    static final int DY = 16;
 
     static double l2(double value) {
         return Math.log(value) / L2;
@@ -41,61 +57,41 @@ public class CollatzDiagram2 extends AbstractDiagram {
         final double yl = scales.sy.lower();
         final double yh = scales.sy.upper();
 
-        //long n = ((long) p2(xl-1));
-        //if(n<0)
-        //    n=0;
+        double nh = p2(Math.min(xh, 63));
 
-        double nh = p2(Math.min(xh-1, 63));
+        // all even > 0
+        for(long m=2; m<nh; m+=2) {
 
-        for(long n=0; n<nh; ++n) {
-            long m = 2*n+1;
-            
-            double x = l2(m);
-            double y = lm(m) - x;
-            double z = l2(m+1);
+            double x = l2(m - 1);
+            if(x>xh)
+                break;
 
-            if(y<yl)
+            double y = lm(m - 1) - x;
+
+            if (y < yl)
                 continue;
 
-            long m1 = 3*(m+1)/2-1;
-            double x1 = l2(m1);
+            long m1 = 3 * m / 2;
+            double x1 = l2(m1 - 1);
             double y1 = y + x - x1;
-            double z1 = l2(m1+1);
 
-            if(y1>yh)
+            if (y1 > yh)
                 continue;
 
-            drawLine(g, m, x, y, z, x1, y1, z1);
-        }
-    }
+            int ix = scales.sx.pix(x);
+            int iy = scales.sy.pix(y);
+            int kx = scales.sx.pix(x1);
+            int ky = scales.sy.pix(y1);
 
-    void drawLine(Graphics2D g, long m,
-                  double x0, double y0, double z0,
-                  double x1, double y1, double z1) {
-        int ix = scales.sx.pix(x0);
-        int iy = scales.sy.pix(y0);
-        int iz = scales.sx.pix(z0);
-        int kx = scales.sx.pix(x1);
-        int ky = scales.sy.pix(y1);
-        int kz = scales.sx.pix(z1);
+            if(iy>=0) {
+                g.setColor(m % 6 == 4 ? Color.GREEN : Color.RED);
+                g.drawLine(Math.max(ix, 0), iy, scales.sx.len(), iy);
+            }
 
-        int dy = scales.sy.pix(m==1?-1:0) - scales.sy.pix(0.3);
-
-        g.setColor(m%3==0?Color.GREEN:Color.RED);
-        g.drawLine(Math.max(ix, 0), iy, scales.sx.len(), iy);
-
-        if(kz>=0) {
-            g.setColor(Color.BLACK);
-            g.drawLine(ix, iy, iz, iy - dy);
-
-            g.setColor(Color.BLUE);
-            g.drawLine(iz, iy - dy, kz, ky - dy);
-
-            g.setColor(Color.BLACK);
-            if (m == 1)
-                g.drawLine(kz, ky - dy, kx, iy);
-            else
-                g.drawLine(kz, ky - dy, kx, ky);
+            if(ix>=0) {
+                g.setColor(Color.BLUE);
+                g.drawLine(ix, iy, kx, ky);
+            }
         }
     }
 

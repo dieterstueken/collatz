@@ -5,25 +5,25 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseWheelEvent;
 
-import static de.ditz.draw.CollatzDiagram2.p2;
-
 /**
  * Created by IntelliJ IDEA.
  * User: stueken
  * Date: 25.05.25
  * Time: 15:01
  */
-public class WheelMouse extends MouseAdapter {
+abstract public class WheelMouse extends MouseAdapter {
 
     final Scale2D scales;
-    final Runnable repaint;
 
     int ix, iy;
 
-    public WheelMouse(Scale2D scales, Runnable repaint) {
+    public WheelMouse(Scale2D scales) {
         this.scales = scales;
-        this.repaint = repaint;
     }
+
+    abstract void repaint();
+
+    abstract void mouseMoved(double x, double y);
 
     void setPos(MouseEvent e) {
         ix = e.getX();
@@ -50,10 +50,10 @@ public class WheelMouse extends MouseAdapter {
 
     @Override
     public void mouseMoved(MouseEvent e) {
+        super.mouseMoved(e);
         double x = scales.sx.val(e.getX());
         double y = scales.sy.val(e.getY());
-
-        System.out.format("%.1f %.1f\n", p2(x), p2(y));
+        mouseMoved(x, y);
     }
 
     @Override
@@ -62,13 +62,13 @@ public class WheelMouse extends MouseAdapter {
         if (m != 0) {
             pan(e.getX() - ix, e.getY() - iy);
             setPos(e);
-            repaint.run();
+            repaint();
         }
     }
 
     @Override
     public void mouseClicked(MouseEvent e) {
-        repaint.run();
+        repaint();
     }
 
     @Override
@@ -80,7 +80,7 @@ public class WheelMouse extends MouseAdapter {
             double sy = (m & InputEvent.SHIFT_DOWN_MASK) == 0 ? s : 0;
 
             scale(e.getX(), e.getY(), sx, sy);
-            repaint.run();
+            repaint();
         }
     }
 };

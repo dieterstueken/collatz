@@ -2,8 +2,6 @@ package de.ditz.draw;
 
 import java.awt.*;
 
-import static de.ditz.draw.CollatzDiagram.open;
-
 /**
  * Created by IntelliJ IDEA.
  * User: stueken
@@ -13,7 +11,7 @@ import static de.ditz.draw.CollatzDiagram.open;
 public class CollatzDiagram1 extends AbstractDiagram {
 
     public static void main(String ... args) {
-        open(CollatzDiagram1::new);
+        CollatzDiagram.openFrame(CollatzDiagram1::new);
     }
 
     public CollatzDiagram1(Scale2D scales) {

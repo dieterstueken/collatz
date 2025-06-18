@@ -13,11 +13,15 @@ import java.util.function.Function;
 public class CollatzDiagram implements Paint2D {
 
     public static void main(String ... args) {
-        open(CollatzDiagram::new);
+        openFrame(CollatzDiagram::new);
     }
 
-    static void open(Function<Scale2D, Paint2D> painter) {
-        SwingUtilities.invokeLater(() -> Pane2D.open(painter));
+    static void openFrame(Function<Scale2D, Paint2D> painter) {
+        SwingUtilities.invokeLater(() -> {
+            Pane2D pane = Pane2D.labeled();
+            pane.addPainter(painter);
+            Pane2D.openFrame(pane);
+        });
     }
 
     static final double L32 = 1.0/Math.log(1.5);

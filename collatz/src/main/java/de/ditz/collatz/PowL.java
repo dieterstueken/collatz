@@ -7,7 +7,7 @@ public class PowL {
 
     public static void main(String[] args) {
         Integer hit = args.length>0 ? Integer.parseInt(args[0]) : null;
-        new PowL(hit, 10).run(15);
+        new PowL(hit, 10).run(17);
 
         BigInteger R10_8 = I3.modPow(BigInteger.valueOf(256-10), BigInteger.valueOf(256));
         System.out.println(R10_8);
