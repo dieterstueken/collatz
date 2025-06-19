@@ -26,7 +26,7 @@ public class CollatzDiagram2 extends AbstractDiagram {
             @Override
             protected void mouseMoved(double x, double y) {
                 //super.mouseMoved(x, y);
-                System.out.format("%.0f %.1f\n", p2(x), p2(y));
+                System.out.format("%.0f %.1f\n", p2(x)+1, p2(y));
             }
         };
 
@@ -75,20 +75,17 @@ public class CollatzDiagram2 extends AbstractDiagram {
             double x1 = l2(m1 - 1);
             double y1 = y + x - x1;
 
-            if (y1 > yh)
-                continue;
-
             int ix = scales.sx.pix(x);
             int iy = scales.sy.pix(y);
             int kx = scales.sx.pix(x1);
             int ky = scales.sy.pix(y1);
 
-            if(iy>=0) {
+            if(iy>=0 && y<yh) {
                 g.setColor(m % 6 == 4 ? Color.GREEN : Color.RED);
                 g.drawLine(Math.max(ix, 0), iy, scales.sx.len(), iy);
             }
 
-            if(ix>=0) {
+            if(kx>=0) {
                 g.setColor(Color.BLUE);
                 g.drawLine(ix, iy, kx, ky);
             }
