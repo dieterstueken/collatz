@@ -47,9 +47,8 @@ public class CollatzDiagram2 extends AbstractDiagram {
         return Math.pow(2, value);
     }
 
-    public void paint2D(Graphics2D g) {
-
-        baseline(g);
+    class Paint {
+        final Graphics2D g;
 
         final double xl = scales.sx.lower();
         final double xh = scales.sx.upper();
@@ -57,48 +56,61 @@ public class CollatzDiagram2 extends AbstractDiagram {
         final double yl = scales.sy.lower();
         final double yh = scales.sy.upper();
 
-        double nh = p2(Math.min(xh, 63));
+        Paint(Graphics2D g) {
+            this.g = g;
+        }
 
-        // all odd > 1
-        for(long m=3; m<nh; m+=2) {
+        void paint() {
 
-            double x = l2(m);
-            if(x>xh)
-                break;
+            baseline();
 
-            double y = lm(m) - x;
+            double mh = p2(Math.min(xh, 20));
 
-            if (y < yl)
-                continue;
+            // all odd > 1
+            for (long m = 3; m < mh; m += 2) {
 
-            long m1 = 3 * (m+1) / 2 - 1;
-            double x1 = l2(m1);
-            double y1 = y + x - x1;
+                double x = l2(m);
+                if (x > xh)
+                    break;
 
-            int ix = scales.sx.pix(x);
-            int iy = scales.sy.pix(y);
-            int kx = scales.sx.pix(x1);
-            int ky = scales.sy.pix(y1);
+                double y = lm(m) - x;
 
-            if(iy>=0 && y<yh) {
-                g.setColor(m % 3 == 0 ? Color.GREEN : Color.RED);
-                g.drawLine(Math.max(ix, 0), iy, scales.sx.len(), iy);
+                if (y < yl)
+                    continue;
+
+                long m1 = 3 * (m + 1) / 2 - 1;
+                double x1 = l2(m1);
+                double y1 = y + x - x1;
+
+                int ix = scales.sx.pix(x);
+                int iy = scales.sy.pix(y);
+                int kx = scales.sx.pix(x1);
+                int ky = scales.sy.pix(y1);
+
+                if (iy >= 0 && y < yh) {
+                    g.setColor(m % 3 == 0 ? Color.GREEN : Color.RED);
+                    g.drawLine(Math.max(ix, 0), iy, scales.sx.len(), iy);
+                }
+
+                if (kx >= 0) {
+                    g.setColor(Color.BLUE);
+                    g.drawLine(ix, iy, kx, ky);
+                }
             }
+        }
 
-            if(kx>=0) {
-                g.setColor(Color.BLUE);
-                g.drawLine(ix, iy, kx, ky);
+        void baseline() {
+            int iy = scales.sy.pix(0.0);
+            if(iy>=0 && iy<scales.sy.len()) {
+                int ix = scales.sx.pix(0.0);
+                g.setColor(Color.RED);
+                g.drawLine(ix, iy, scales.sx.len(), iy);
             }
         }
     }
 
-    void baseline(Graphics2D g) {
-        int iy = scales.sy.pix(0.0);
-        if(iy>=0 && iy<scales.sy.len()) {
-            int ix = scales.sx.pix(0.0);
-            g.setColor(Color.RED);
-            g.drawLine(ix, iy, scales.sx.len(), iy);
-        }
+    public void paint2D(Graphics2D g) {
+         new Paint(g).paint();
     }
 
     int lm(long m) {
