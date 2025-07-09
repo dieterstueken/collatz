@@ -8,10 +8,10 @@ package de.ditz.draw;
  */
 abstract public class AbstractDiagram implements Paint2D {
 
-    static final double L32 = 1.0/Math.log(1.5);
+    static final double L32 = Math.log(1.5);
 
     static double l15(double value) {
-        return Math.log(value) * L32;
+        return Math.log(value) / L32;
     }
 
     static double p15(double value) {

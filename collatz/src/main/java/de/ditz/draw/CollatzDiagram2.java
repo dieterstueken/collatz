@@ -87,16 +87,19 @@ public class CollatzDiagram2 extends AbstractDiagram {
                 int kx = scales.sx.pix(x1);
                 int ky = scales.sy.pix(y1);
 
+                Color color = Color.BLUE;
                 if (iy >= 0 && y < yh) {
                     //g.setColor(m % 3 == 0 ? Color.GREEN : Color.RED);
                     if(m % 3 != 0) {
                         g.setColor(Color.RED);
                         g.drawLine(Math.max(ix, 0), iy, scales.sx.len(), iy);
+                    } else {
+                        color = Color.GREEN;
                     }
                 }
 
                 if (kx >= 0) {
-                    g.setColor(Color.BLUE);
+                    g.setColor(color);
                     g.drawLine(ix, iy, kx, ky);
                 }
             }
