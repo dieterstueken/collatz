@@ -1,5 +1,6 @@
 plugins {
-    id 'org.jetbrains.kotlin.jvm' version '2.1.20-RC3'
+    //alias libs.plugins.org.jetbrains.kotlin.jvm
+    alias libs.plugins.nl.littlerobots.version.catalog.update
     id 'idea'
     id 'java'
 }
@@ -26,7 +27,7 @@ allprojects {
             }
 
             dependencies {
-                testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: '5.12.1'
+                testImplementation libs.org.junit.jupiter.engine
             }
         }
     }

@@ -1,0 +1,14 @@
+[versions]
+junit-jupiter = "6.0.2"
+
+[libraries]
+commons-math = "org.apache.commons:commons-math3:3.6.1"
+commons-math-parent = "org.apache.commons:commons-math-parent:4.0-beta1"
+org-junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit-jupiter" }
+org-junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit-jupiter" }
+org-junit-launcher = { module = "org.junit.platform:junit-platform-launcher", version.ref = "junit-jupiter" }
+
+[plugins]
+com-github-ben-manes-versions = "com.github.ben-manes.versions:0.53.0"
+nl-littlerobots-version-catalog-update = "nl.littlerobots.version-catalog-update:1.0.1"
+org-jetbrains-kotlin-jvm = "org.jetbrains.kotlin.jvm:2.3.20-Beta1"

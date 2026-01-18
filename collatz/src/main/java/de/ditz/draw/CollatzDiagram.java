@@ -24,10 +24,21 @@ public class CollatzDiagram implements Paint2D {
         });
     }
 
-    static final double L32 = 1.0/Math.log(1.5);
+    static final double L2 = Math.log(2);
+    static final double L3 = Math.log(3);
+
+    static double l2(double value) {
+        return Math.log(value) / L2;
+    }
+
+    static double p2(double value) {
+        return Math.pow(2, value);
+    }
+
+    static final double L32 = L3 - L2; // = log(1.5)
 
     static double l15(double value) {
-        return Math.log(value) * L32;
+        return Math.log(value) / L32;
     }
 
     static double p15(double value) {

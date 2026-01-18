@@ -3,5 +3,5 @@ plugins {
 }
 
 dependencies {
-    implementation 'org.apache.commons:commons-math-parent:4.0-beta1'
+    implementation libs.commons.math.parent
 }

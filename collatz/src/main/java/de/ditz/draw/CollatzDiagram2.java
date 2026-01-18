@@ -3,6 +3,8 @@ package de.ditz.draw;
 import javax.swing.*;
 import java.awt.*;
 
+import static de.ditz.draw.CollatzDiagram.*;
+
 /**
  * Created by IntelliJ IDEA.
  * User: stueken
@@ -26,25 +28,17 @@ public class CollatzDiagram2 extends AbstractDiagram {
             @Override
             protected void mouseMoved(double x, double y) {
                 //super.mouseMoved(x, y);
-                System.out.format("%.0f %.1f\n", p2(x), p2(y));
+                System.out.format("%.0f %.1f\n", p2(x), p15(y));
             }
         };
 
         return pane.addLabels().addPainter(CollatzDiagram2::new);
     }
 
+    public static double L232 = L2/L32;
+
     public CollatzDiagram2(Scale2D scales) {
         super(scales);
-    }
-
-    static final double L2 = Math.log(2);
-
-    static double l2(double value) {
-        return Math.log(value) / L2;
-    }
-
-    static double p2(double value) {
-        return Math.pow(2, value);
     }
 
     class Paint {
@@ -73,14 +67,15 @@ public class CollatzDiagram2 extends AbstractDiagram {
                 if (x > xh)
                     break;
 
-                double y = lm(m) - x;
+                int lm = lm(m);
+                double y = (lm - x) * L232;
 
                 if (y < yl)
                     continue;
 
                 long m1 = 3 * (m + 1) / 2 - 1;
                 double x1 = l2(m1);
-                double y1 = y + x - x1;
+                double y1 = (lm - x1) * L232;
 
                 int ix = scales.sx.pix(x);
                 int iy = scales.sy.pix(y);
