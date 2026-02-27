@@ -59,6 +59,11 @@ public class CollatzDiagram2 extends AbstractDiagram {
             this.g = g;
         }
 
+        void drawLine(int x1, int y1, int x2, int y2) {
+           //g.drawLine(x1,y1, x2, y2);
+            g.drawLine(y1, x1, y2, x2);
+        }
+
         void paint() {
 
             baseline();
@@ -92,7 +97,7 @@ public class CollatzDiagram2 extends AbstractDiagram {
                     //g.setColor(m % 3 == 0 ? Color.GREEN : Color.RED);
                     if(m % 3 != 0) {
                         g.setColor(Color.RED);
-                        g.drawLine(Math.max(ix, 0), iy, scales.sx.len(), iy);
+                        drawLine(Math.max(ix, 0), iy, scales.sx.len(), iy);
                     } else {
                         color = Color.GREEN;
                     }
@@ -100,7 +105,7 @@ public class CollatzDiagram2 extends AbstractDiagram {
 
                 if (kx >= 0) {
                     g.setColor(color);
-                    g.drawLine(ix, iy, kx, ky);
+                    drawLine(ix, iy, kx, ky);
                 }
             }
         }
@@ -110,7 +115,7 @@ public class CollatzDiagram2 extends AbstractDiagram {
             if(iy>=0 && iy<scales.sy.len()) {
                 int ix = scales.sx.pix(0.0);
                 g.setColor(Color.RED);
-                g.drawLine(ix, iy, scales.sx.len(), iy);
+                drawLine(ix, iy, scales.sx.len(), iy);
             }
         }
     }
