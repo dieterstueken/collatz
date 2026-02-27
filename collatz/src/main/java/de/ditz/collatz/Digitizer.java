@@ -21,6 +21,10 @@ public class Digitizer {
         this(digits, false);
     }
 
+    public StringBuilder digits(long n) {
+        return digits(BigInteger.valueOf(n));
+    }
+
     public StringBuilder digits(BigInteger n) {
         return digits(n, 1024);
     }

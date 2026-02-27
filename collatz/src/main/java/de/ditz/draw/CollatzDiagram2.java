@@ -1,5 +1,7 @@
 package de.ditz.draw;
 
+import de.ditz.collatz.Digitizer;
+
 import javax.swing.*;
 import java.awt.*;
 
@@ -12,6 +14,8 @@ import static de.ditz.draw.CollatzDiagram.*;
  * Time: 15:58
  */
 public class CollatzDiagram2 extends AbstractDiagram {
+
+    static final Digitizer DIG6 = new Digitizer("012345") ;
 
     public static void main(String ... args) {
         SwingUtilities.invokeLater(CollatzDiagram2::openFrame);
@@ -28,7 +32,8 @@ public class CollatzDiagram2 extends AbstractDiagram {
             @Override
             protected void mouseMoved(double x, double y) {
                 //super.mouseMoved(x, y);
-                System.out.format("%.0f %.1f\n", p2(x), p15(y));
+                long p2 = (long) Math.rint(p2(x));
+                System.out.format("%6d %4ss %.1f\n", p2, DIG6.digits(p2), p15(y));
             }
         };
 
