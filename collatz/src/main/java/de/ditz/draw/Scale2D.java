@@ -17,4 +17,9 @@ public class Scale2D {
         sx = new Scale(0, dpu, width, "Sx");
         sy = new Scale(0, dpu, height, "Sy").mirror();
     }
+
+    public void center() {
+        sx.center();
+        sy.center();
+    }
 }

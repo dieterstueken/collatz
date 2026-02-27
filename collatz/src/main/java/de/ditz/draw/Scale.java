@@ -109,7 +109,7 @@ public class Scale {
         return val(mirr(len()));
     }
 
-    double center() {
+    double middle() {
         return (val(0) + val(len()))/2;
     }
 
@@ -140,5 +140,10 @@ public class Scale {
      */
     void pan(int pix) {
         x0 -= pix / dpu;
+    }
+
+    Scale center() {
+        x0 -= middle();
+        return this;
     }
 }

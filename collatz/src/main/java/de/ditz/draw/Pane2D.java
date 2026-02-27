@@ -74,6 +74,11 @@ public class Pane2D extends JPanel {
         return addPainter(Legend2D::new);
     }
 
+    public Pane2D center() {
+        scales.center();
+        return this;
+    }
+
     public Pane2D addPainter(Paint2D painter) {
         painters.add(painter);
         return this;
