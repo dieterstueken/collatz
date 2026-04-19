@@ -19,6 +19,22 @@ public class View extends JPanel {
     int yoff = 0;
 
     ImageGenerator generator;
+
+    public static View open(ImageSource source, double scale, int size) {
+        View view = new View(source, scale/size);
+        view.setPreferredSize(new Dimension(size, size));
+
+        JFrame jf = new JFrame();
+
+        Container contentPane = jf.getContentPane();
+        contentPane.setLayout(new BorderLayout());
+        contentPane.add(view);
+        jf.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+        jf.pack();
+
+        invokeLater(()->jf.setVisible(true));
+        return view;
+    }
     
     public View(ImageSource source, double scale) {
         this.source = source;
@@ -85,6 +101,17 @@ public class View extends JPanel {
 
             updateLater();
         }
+
+        @Override
+        public void mousePressed(MouseEvent e) {
+            hit(e.getX(), e.getY());
+        }
+    }
+
+    void hit(int ix, int iy) {
+        double x = scale * (2 * ix - getWidth()) / 2;
+        double y = scale * (2 * iy - getHeight()) / 2;
+        source.hit(x+x0, -y-y0);
     }
 
     void stopGenerator() {

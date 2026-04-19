@@ -33,7 +33,7 @@ public class CollatzDiagram2 extends AbstractDiagram {
             protected void mouseMoved(double x, double y) {
                 //super.mouseMoved(x, y);
                 long p2 = (long) Math.rint(p2(x));
-                System.out.format("%6d %4ss %.1f\n", p2, DIG6.digits(p2), p15(y));
+                System.out.format("%6d %4ss %.2f\n", p2, DIG6.digits(p2), y);
             }
         };
 

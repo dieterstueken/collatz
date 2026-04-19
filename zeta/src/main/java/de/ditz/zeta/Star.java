@@ -1,9 +1,6 @@
 package de.ditz.zeta;
 
-import javax.swing.*;
 import java.awt.*;
-
-import static javax.swing.SwingUtilities.invokeLater;
 
 /**
  * Created by IntelliJ IDEA.
@@ -11,9 +8,13 @@ import static javax.swing.SwingUtilities.invokeLater;
  * Date: 30.05.23
  * Time: 11:20
  */
-public class Star {
+public class Star implements ImageSource {
 
-    public static int rgb(double x, double y) {
+    static void main(String ... args) {
+        new Star().open(3.0);
+    }
+
+    public int rgb(double x, double y) {
         double rho = Math.hypot(x, y);
         if(rho<1)
             return Color.GRAY.getRGB();
@@ -25,23 +26,5 @@ public class Star {
         int i = (int)((phi+360)/180.0*50)%2;
 
         return (i==0 ? Color.BLACK : Color.WHITE).getRGB();
-    }
-
-    static final int SIZE = 512;
-
-    public static void main(String ... args) {
-
-        View  view = new View(Star::rgb, 3.0/SIZE);
-        view.setPreferredSize(new Dimension(SIZE, SIZE));
-
-        JFrame jf = new JFrame();
-
-        Container contentPane = jf.getContentPane();
-        contentPane.setLayout(new BorderLayout());
-        contentPane.add(view);
-        jf.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        jf.pack();
-
-        invokeLater(()->jf.setVisible(true));
     }
 }
